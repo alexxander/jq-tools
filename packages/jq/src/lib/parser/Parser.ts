@@ -312,7 +312,7 @@ export class Parser {
       if (this.isPunc('[')) return this.parseArray();
       if (this.isPunc('{')) return this.parseObject();
       if (this.isVar()) return this.parseVar();
-      if (this.isIdent()) return this.parseFilter();
+      if (this.isIdent() || this.isKw('not')) return this.parseFilter();
       if (this.isFormat()) return this.parseFormat();
       if (this.isStr()) return this.parseStr();
 
@@ -329,7 +329,7 @@ export class Parser {
     precedence = 0,
     ignoreOp: string[] = []
   ): ExpressionAst {
-    const op = this.isOp();
+    const op = this.isOp() || this.isKw('and') || this.isKw('or');
     if (op && !ignoreOp.includes(op.value)) {
       const otherPrecedence =
         Parser.precedence[op.value as keyof typeof Parser.precedence];
@@ -474,7 +474,9 @@ export class Parser {
   }
 
   parseFilter(): FilterAst {
-    const name = this.skipIdent().value;
+    const name = this.isKw('not')
+      ? this.skipKw().value
+      : this.skipIdent().value;
     const args = this.isPunc('(')
       ? this.delimited('(', ')', ';', () => this.parseExpression())
       : [];

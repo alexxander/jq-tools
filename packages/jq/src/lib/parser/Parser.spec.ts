@@ -337,6 +337,34 @@ describe('parse', () => {
         );
       });
     });
+    it('bool', () => {
+      expect(parse('false and true or true and false | not')).toEqual(
+        progAst({
+          expr: {
+            left: {
+              left: {
+                left: { type: 'bool', value: false },
+                operator: 'and',
+                right: { type: 'bool', value: true },
+                type: 'binary',
+              },
+              operator: 'or',
+              right: {
+                left: { type: 'bool', value: true },
+                operator: 'and',
+                right: { type: 'bool', value: false },
+                type: 'binary',
+              },
+              type: 'binary',
+            },
+            operator: '|',
+            right: { args: [], name: 'not', type: 'filter' },
+            type: 'binary',
+          },
+          type: 'root',
+        })
+      );
+    });
   });
   it('array', () => {
     expect(parse('[1,2,3]')).toEqual(
