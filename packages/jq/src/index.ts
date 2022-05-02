@@ -1,1 +1,1 @@
-export * from './lib/jq';
+export { parse } from './lib/parser/Parser';
