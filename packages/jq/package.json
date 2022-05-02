@@ -1,5 +1,10 @@
 {
   "name": "@jq-tools/jq",
+  "description": "jq for js",
   "version": "0.0.2",
-  "type": "commonjs"
+  "type": "commonjs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alexxander/jq-tools.git"
+  }
 }
