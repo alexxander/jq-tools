@@ -169,7 +169,7 @@ export interface IteratorAst {
 
 export interface ArrayAst {
   type: 'array';
-  expr: ExpressionAst;
+  expr?: ExpressionAst;
 }
 
 export type ObjectEntryAst =

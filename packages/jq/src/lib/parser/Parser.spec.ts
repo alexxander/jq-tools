@@ -16,6 +16,42 @@ describe('parse', () => {
         })
       );
     });
+    it('nested', () => {
+      expect(parse('.a.b[0].c')).toEqual(
+        progAst({
+          expr: {
+            expr: {
+              expr: {
+                expr: { expr: { type: 'identity' }, index: 'a', type: 'index' },
+                index: 'b',
+                type: 'index',
+              },
+              index: { type: 'num', value: 0 },
+              type: 'index',
+            },
+            index: 'c',
+            type: 'index',
+          },
+          type: 'root',
+        })
+      );
+    });
+    it('optional', () => {
+      expect(parse('.a?.b')).toEqual(
+        progAst({
+          expr: {
+            expr: {
+              body: { expr: { type: 'identity' }, index: 'a', type: 'index' },
+              short: true,
+              type: 'try',
+            },
+            index: 'b',
+            type: 'index',
+          },
+          type: 'root',
+        })
+      );
+    });
     it('str', () => {
       expect(parse('."$abc"')).toEqual(
         progAst({
@@ -366,71 +402,100 @@ describe('parse', () => {
       );
     });
   });
-  it('array', () => {
-    expect(parse('[1,2,3]')).toEqual(
-      progAst({
-        expr: {
+  describe('array', () => {
+    it('array', () => {
+      expect(parse('[1,2,3]')).toEqual(
+        progAst({
           expr: {
-            left: {
-              left: { type: 'num', value: 1 },
+            expr: {
+              left: {
+                left: { type: 'num', value: 1 },
+                operator: ',',
+                right: { type: 'num', value: 2 },
+                type: 'binary',
+              },
               operator: ',',
-              right: { type: 'num', value: 2 },
+              right: { type: 'num', value: 3 },
               type: 'binary',
             },
-            operator: ',',
-            right: { type: 'num', value: 3 },
-            type: 'binary',
+            type: 'array',
           },
-          type: 'array',
-        },
-        type: 'root',
-      })
-    );
+          type: 'root',
+        })
+      );
+    });
+    it('empty', () => {
+      expect(parse('[]')).toEqual(
+        progAst({
+          expr: {
+            type: 'array',
+          },
+          type: 'root',
+        })
+      );
+    });
   });
-  it('object', () => {
-    expect(
-      parse(
-        '{a: 1, "$a": 2, "@a": 3, "1": 4, ($var): 5, "\\($var):\\($var)": 6}'
-      )
-    ).toEqual(
-      progAst({
-        expr: {
-          entries: [
-            { key: 'a', value: { type: 'num', value: 1 } },
-            {
-              key: { interpolated: false, type: 'str', value: '$a' },
-              value: { type: 'num', value: 2 },
-            },
-            {
-              key: { interpolated: false, type: 'str', value: '@a' },
-              value: { type: 'num', value: 3 },
-            },
-            {
-              key: { interpolated: false, type: 'str', value: '1' },
-              value: { type: 'num', value: 4 },
-            },
-            {
-              key: { name: '$var', type: 'var' },
-              value: { type: 'num', value: 5 },
-            },
-            {
-              key: {
-                interpolated: true,
-                parts: [
-                  { name: '$var', type: 'var' },
-                  ':',
-                  { name: '$var', type: 'var' },
-                ],
-                type: 'str',
+  describe('object', () => {
+    it('object', () => {
+      expect(
+        parse(
+          '{a: 1, "$a": 2, "@a": 3, "1": 4, ($var): 5, "\\($var):\\($var)": 6}'
+        )
+      ).toEqual(
+        progAst({
+          expr: {
+            entries: [
+              { key: 'a', value: { type: 'num', value: 1 } },
+              {
+                key: { interpolated: false, type: 'str', value: '$a' },
+                value: { type: 'num', value: 2 },
               },
-              value: { type: 'num', value: 6 },
-            },
-          ],
-          type: 'object',
-        },
-        type: 'root',
-      })
-    );
+              {
+                key: { interpolated: false, type: 'str', value: '@a' },
+                value: { type: 'num', value: 3 },
+              },
+              {
+                key: { interpolated: false, type: 'str', value: '1' },
+                value: { type: 'num', value: 4 },
+              },
+              {
+                key: { name: '$var', type: 'var' },
+                value: { type: 'num', value: 5 },
+              },
+              {
+                key: {
+                  interpolated: true,
+                  parts: [
+                    { name: '$var', type: 'var' },
+                    ':',
+                    { name: '$var', type: 'var' },
+                  ],
+                  type: 'str',
+                },
+                value: { type: 'num', value: 6 },
+              },
+            ],
+            type: 'object',
+          },
+          type: 'root',
+        })
+      );
+    });
+    it('object - keywords', () => {
+      expect(parse('{label: 1, try: 2, catch: 3}')).toEqual(
+        progAst({
+          expr: {
+            entries: [
+              { key: 'label', value: { type: 'num', value: 1 } },
+              { key: 'try', value: { type: 'num', value: 2 } },
+              { key: 'catch', value: { type: 'num', value: 3 } },
+            ],
+            type: 'object',
+          },
+          type: 'root',
+        })
+      );
+    });
   });
 
   it('interpolation', () => {

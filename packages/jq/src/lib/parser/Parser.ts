@@ -268,11 +268,12 @@ export class Parser {
     const expr = cb();
     if (this.isOp('?')) {
       this.skipOp('?');
-      return {
+      const shortTry: TryAst = {
         type: 'try',
         short: true,
         body: expr,
       };
+      return this.atomMaybe(() => shortTry);
     }
     return expr;
   }
@@ -498,6 +499,11 @@ export class Parser {
 
   parseArray(): ArrayAst {
     this.skipPunc('[');
+    if (this.isPunc(']')) {
+      this.skipPunc(']');
+      return { type: 'array' };
+    }
+
     const expr = this.parseExpression();
     this.skipPunc(']');
     return { type: 'array', expr: expr };
@@ -514,8 +520,8 @@ export class Parser {
 
   parseEntry(): ObjectEntryAst {
     let key;
-    if (this.isIdent()) {
-      key = this.skipIdent().value;
+    if (this.isIdent() || this.isKw()) {
+      key = this.isIdent() ? this.skipIdent().value : this.skipKw().value;
       if (!this.isPunc(':')) {
         return { key };
       }
