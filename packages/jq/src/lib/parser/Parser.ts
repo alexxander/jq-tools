@@ -222,7 +222,8 @@ export class Parser {
     separator: string | OpToken,
     parser: () => T,
     minCount = 0,
-    maxCount?: number
+    maxCount?: number,
+    allowTrailingSeparator?: boolean
   ) {
     this.skipPunc(start);
     const out = [];
@@ -238,10 +239,26 @@ export class Parser {
         if (typeof separator === 'string') this.skipPunc(separator);
         else this.skipOp(separator.value);
       }
+
+      // Break out after skipping a trailing separator
+      if (allowTrailingSeparator && this.isPunc(stop)) {
+        break;
+      }
+
       out.push(parser());
       first = false;
       count++;
     }
+
+    // Consume the trailing separator if it was not consumed in the loop above due to maxCount
+    if (allowTrailingSeparator) {
+      if (typeof separator === 'string') {
+        if (this.isPunc(separator)) this.skipPunc(separator);
+      } else {
+        if (this.isOp(separator.value)) this.skipOp(separator.value);
+      }
+    }
+
     this.skipPunc(stop);
     return out;
   }
@@ -512,8 +529,14 @@ export class Parser {
   parseObject(): ObjectAst {
     return {
       type: 'object',
-      entries: this.delimited('{', '}', { type: 'op', value: ',' }, () =>
-        this.parseEntry()
+      entries: this.delimited(
+        '{',
+        '}',
+        { type: 'op', value: ',' },
+        () => this.parseEntry(),
+        undefined,
+        undefined,
+        true
       ),
     };
   }

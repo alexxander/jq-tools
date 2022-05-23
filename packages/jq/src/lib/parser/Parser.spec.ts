@@ -496,6 +496,20 @@ describe('parse', () => {
         })
       );
     });
+    it('trailing comma', () => {
+      expect(parse('{a: 1, b: 2, }')).toEqual(
+        progAst({
+          expr: {
+            entries: [
+              { key: 'a', value: { type: 'num', value: 1 } },
+              { key: 'b', value: { type: 'num', value: 2 } },
+            ],
+            type: 'object',
+          },
+          type: 'root',
+        })
+      );
+    });
   });
 
   it('interpolation', () => {
