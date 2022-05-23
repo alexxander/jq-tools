@@ -98,28 +98,54 @@ describe('parse', () => {
         })
       );
     });
-    it('slice', () => {
-      expect(parse('.[1+3*$var:500]')).toEqual(
-        progAst({
-          expr: {
-            expr: { type: 'identity' },
-            from: {
-              left: { type: 'num', value: 1 },
-              operator: '+',
-              right: {
-                left: { type: 'num', value: 3 },
-                operator: '*',
-                right: { name: '$var', type: 'var' },
+    describe('slice', () => {
+      it('full', () => {
+        expect(parse('.[1+3*$var:500]')).toEqual(
+          progAst({
+            expr: {
+              expr: { type: 'identity' },
+              from: {
+                left: { type: 'num', value: 1 },
+                operator: '+',
+                right: {
+                  left: { type: 'num', value: 3 },
+                  operator: '*',
+                  right: { name: '$var', type: 'var' },
+                  type: 'binary',
+                },
                 type: 'binary',
               },
-              type: 'binary',
+              to: { type: 'num', value: 500 },
+              type: 'slice',
             },
-            to: { type: 'num', value: 500 },
-            type: 'slice',
-          },
-          type: 'root',
-        })
-      );
+            type: 'root',
+          })
+        );
+      });
+      it('left', () => {
+        expect(parse('.[0:]')).toEqual(
+          progAst({
+            expr: {
+              expr: { type: 'identity' },
+              from: { type: 'num', value: 0 },
+              type: 'slice',
+            },
+            type: 'root',
+          })
+        );
+      });
+      it('right', () => {
+        expect(parse('.[:2]')).toEqual(
+          progAst({
+            expr: {
+              expr: { type: 'identity' },
+              to: { type: 'num', value: 2 },
+              type: 'slice',
+            },
+            type: 'root',
+          })
+        );
+      });
     });
     it('iterator', () => {
       expect(parse('.[]')).toEqual(

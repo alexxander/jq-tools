@@ -159,8 +159,8 @@ export interface IndexAst {
 export interface SliceAst {
   type: 'slice';
   expr: ExpressionAst;
-  from: ExpressionAst;
-  to: ExpressionAst;
+  from?: ExpressionAst;
+  to?: ExpressionAst;
 }
 
 export interface IteratorAst {

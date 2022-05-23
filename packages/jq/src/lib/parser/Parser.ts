@@ -456,13 +456,13 @@ export class Parser {
       if (this.isPunc(']')) {
         out = { type: 'iterator', expr };
       } else {
-        const index = this.parseExpression();
+        const from = this.isPunc(':') ? undefined : this.parseExpression();
         if (this.isPunc(':')) {
           this.skipPunc(':');
-          const to = this.parseExpression();
-          out = { type: 'slice', expr, from: index, to };
+          const to = this.isPunc(']') ? undefined : this.parseExpression();
+          out = { type: 'slice', expr, from, to };
         } else {
-          out = { type: 'index', expr, index };
+          out = { type: 'index', expr, index: from! };
         }
       }
       this.skipPunc(']');
