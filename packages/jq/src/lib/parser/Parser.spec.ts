@@ -619,6 +619,33 @@ describe('parse', () => {
           })
         );
       });
+      it('if-then-elif-elif-else', () => {
+        expect(
+          parse(
+            'if true then "yes" elif false then "never1" elif false then "never2" else "no" end'
+          )
+        ).toEqual(
+          progAst({
+            expr: {
+              cond: { type: 'bool', value: true },
+              then: { interpolated: false, type: 'str', value: 'yes' },
+              elifs: [
+                {
+                  cond: { type: 'bool', value: false },
+                  then: { interpolated: false, type: 'str', value: 'never1' },
+                },
+                {
+                  cond: { type: 'bool', value: false },
+                  then: { interpolated: false, type: 'str', value: 'never2' },
+                },
+              ],
+              else: { interpolated: false, type: 'str', value: 'no' },
+              type: 'if',
+            },
+            type: 'root',
+          })
+        );
+      });
     });
     describe('try', () => {
       it('try', () => {

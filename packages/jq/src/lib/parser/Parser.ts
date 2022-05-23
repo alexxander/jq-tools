@@ -577,6 +577,14 @@ export class Parser {
     const cond = this.parseExpression();
     this.skipKw('then');
     const then = this.parseExpression();
+    const elifs = [];
+    while (this.isKw('elif')) {
+      this.skipKw('elif');
+      const cond = this.parseExpression();
+      this.skipKw('then');
+      const then = this.parseExpression();
+      elifs.push({ cond, then });
+    }
     let elseExpr;
     if (this.isKw('else')) {
       this.skipKw('else');
@@ -584,7 +592,13 @@ export class Parser {
     }
     this.skipKw('end');
 
-    return { type: 'if', cond, then, else: elseExpr };
+    return {
+      type: 'if',
+      cond,
+      then,
+      elifs: elifs.length > 0 ? elifs : undefined,
+      else: elseExpr,
+    };
   }
 
   parseTry(): TryAst {

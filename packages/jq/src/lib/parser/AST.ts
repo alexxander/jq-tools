@@ -99,6 +99,7 @@ export interface IfAst {
   type: 'if';
   cond: ExpressionAst;
   then: ExpressionAst;
+  elifs?: { cond: ExpressionAst; then: ExpressionAst }[];
   else?: ExpressionAst;
 }
 
