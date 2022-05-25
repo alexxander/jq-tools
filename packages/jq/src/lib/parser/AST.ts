@@ -204,7 +204,7 @@ export interface ArrayDestructuringAst {
 }
 
 export type ObjectDestructuringEntryAst =
-  | { key?: VarAst; destructuring?: never }
+  | { key: VarAst; destructuring?: never }
   | { key: ExpressionAst | string; destructuring: DestructuringAst };
 
 export interface ObjectDestructuringAst {

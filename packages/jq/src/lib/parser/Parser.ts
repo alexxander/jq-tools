@@ -58,6 +58,10 @@ export class Parser {
     '?//': 10,
   };
 
+  static getPrecedence(op: string) {
+    return Parser.precedence[op as keyof typeof Parser.precedence];
+  }
+
   constructor(private input: Tokenizer) {}
 
   parse() {
@@ -349,8 +353,7 @@ export class Parser {
   ): ExpressionAst {
     const op = this.isOp() || this.isKw('and') || this.isKw('or');
     if (op && !ignoreOp.includes(op.value)) {
-      const otherPrecedence =
-        Parser.precedence[op.value as keyof typeof Parser.precedence];
+      const otherPrecedence = Parser.getPrecedence(op.value);
       if (otherPrecedence > precedence) {
         this.input.next();
         return this.maybeBinary(
@@ -429,7 +432,7 @@ export class Parser {
       type: 'objectDestructuring',
       entries: this.delimited('{', '}', { type: 'op', value: ',' }, () => {
         if (this.isVar()) return { key: this.parseVar() };
-        let key;
+        let key: string | ExpressionAst | StrAst;
         if (this.isIdent()) {
           key = this.skipIdent().value;
         } else if (this.isPunc('(')) {
