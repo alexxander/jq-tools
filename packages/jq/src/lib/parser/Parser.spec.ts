@@ -329,7 +329,30 @@ describe('parse', () => {
       });
     });
     describe('binary', () => {
-      it('numbers', () => {
+      it('addition', () => {
+        expect(parse('1+2+3+4')).toEqual(
+          progAst({
+            expr: {
+              left: {
+                left: {
+                  left: { type: 'num', value: 1 },
+                  operator: '+',
+                  right: { type: 'num', value: 2 },
+                  type: 'binary',
+                },
+                operator: '+',
+                right: { type: 'num', value: 3 },
+                type: 'binary',
+              },
+              operator: '+',
+              right: { type: 'num', value: 4 },
+              type: 'binary',
+            },
+            type: 'root',
+          })
+        );
+      });
+      it('addition vs multiplication', () => {
         expect(parse('1+2*5+3')).toEqual(
           progAst({
             expr: {
@@ -346,6 +369,29 @@ describe('parse', () => {
               },
               operator: '+',
               right: { type: 'num', value: 3 },
+              type: 'binary',
+            },
+            type: 'root',
+          })
+        );
+      });
+      it('addition vs multiplication with brackets', () => {
+        expect(parse('(1+2)*(5+3)')).toEqual(
+          progAst({
+            expr: {
+              left: {
+                left: { type: 'num', value: 1 },
+                operator: '+',
+                right: { type: 'num', value: 2 },
+                type: 'binary',
+              },
+              operator: '*',
+              right: {
+                left: { type: 'num', value: 5 },
+                operator: '+',
+                right: { type: 'num', value: 3 },
+                type: 'binary',
+              },
               type: 'binary',
             },
             type: 'root',

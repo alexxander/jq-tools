@@ -362,7 +362,32 @@ describe('print', () => {
       });
     });
     describe('binary', () => {
-      it('numbers', () => {
+      it('addition', () => {
+        expect(
+          print(
+            progAst({
+              expr: {
+                left: {
+                  left: {
+                    left: { type: 'num', value: 1 },
+                    operator: '+',
+                    right: { type: 'num', value: 2 },
+                    type: 'binary',
+                  },
+                  operator: '+',
+                  right: { type: 'num', value: 3 },
+                  type: 'binary',
+                },
+                operator: '+',
+                right: { type: 'num', value: 4 },
+                type: 'binary',
+              },
+              type: 'root',
+            })
+          )
+        ).toEqual('1 + 2 + 3 + 4');
+      });
+      it('addition vs multiplication', () => {
         expect(
           print(
             progAst({
@@ -386,6 +411,31 @@ describe('print', () => {
             })
           )
         ).toEqual('1 + 2 * 5 + 3');
+      });
+      it('addition vs multiplication with brackets', () => {
+        expect(
+          print(
+            progAst({
+              expr: {
+                left: {
+                  left: { type: 'num', value: 1 },
+                  operator: '+',
+                  right: { type: 'num', value: 2 },
+                  type: 'binary',
+                },
+                operator: '*',
+                right: {
+                  left: { type: 'num', value: 5 },
+                  operator: '+',
+                  right: { type: 'num', value: 3 },
+                  type: 'binary',
+                },
+                type: 'binary',
+              },
+              type: 'root',
+            })
+          )
+        ).toEqual('(1 + 2) * (5 + 3)');
       });
       it('numbers - precedence', () => {
         expect(
