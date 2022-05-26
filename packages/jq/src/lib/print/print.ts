@@ -306,7 +306,7 @@ class Print {
     trailingSeparator?: boolean
   ) {
     return `${start}${items.map(cb).join(separator)}${
-      trailingSeparator ? separator : ''
+      trailingSeparator && items.length > 0 ? separator : ''
     }${stop}`;
   }
 
