@@ -780,7 +780,7 @@ describe('print', () => {
               type: 'root',
             })
           )
-        ).toEqual('if true then "yes" end');
+        ).toEqual('if true\n  then "yes"\nend');
       });
       it('if-then-else', () => {
         expect(
@@ -795,7 +795,7 @@ describe('print', () => {
               type: 'root',
             })
           )
-        ).toEqual('if true then "yes" else "no" end');
+        ).toEqual('if true\n  then "yes"\n  else "no"\nend');
       });
       it('if-then-elif-elif-else', () => {
         expect(
@@ -821,7 +821,7 @@ describe('print', () => {
             })
           )
         ).toEqual(
-          'if true then "yes" elif false then "never1" elif false then "never2" else "no" end'
+          'if true\n  then "yes"\n  elif false\n    then "never1"\n  elif false\n    then "never2"\n  else "no"\nend'
         );
       });
     });
@@ -916,7 +916,7 @@ describe('print', () => {
             type: 'root',
           })
         )
-      ).toEqual('reduce .[] as $item (0; . + $item)');
+      ).toEqual('reduce .[] as $item (\n  0;\n  . + $item\n)');
     });
     describe('foreach', () => {
       it('2 args', () => {
@@ -938,7 +938,7 @@ describe('print', () => {
               type: 'root',
             })
           )
-        ).toEqual('foreach .[] as $item (0; . + $item)');
+        ).toEqual('foreach .[] as $item (\n  0;\n  . + $item\n)');
       });
       it('3 args', () => {
         expect(
@@ -965,7 +965,7 @@ describe('print', () => {
               type: 'root',
             })
           )
-        ).toEqual('foreach .[] as $item (0; . + $item; . + 1)');
+        ).toEqual('foreach .[] as $item (\n  0;\n  . + $item;\n  . + 1\n)');
       });
     });
   });

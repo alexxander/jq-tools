@@ -121,15 +121,19 @@ class Print {
     }`;
   }
   if(ast: IfAst) {
-    return `if ${this.expression(ast.cond)} then ${this.expression(ast.then)}${(
-      ast.elifs ?? []
-    )
+    return `if ${this.expression(ast.cond)}${this.tab()}then ${this.expression(
+      ast.then
+    )}${(ast.elifs ?? [])
       .map((item) => {
-        return ` elif ${this.expression(item.cond)} then ${this.expression(
-          item.then
-        )}`;
+        const out = `${this.br()}elif ${this.expression(
+          item.cond
+        )}${this.tab()}then ${this.expression(item.then)}`;
+        this.shiftTab();
+        return out;
       })
-      .join('')}${ast.else ? ` else ${this.expression(ast.else)}` : ''} end`;
+      .join('')}${
+      ast.else ? `${this.br()}else ${this.expression(ast.else)}` : ''
+    }${this.shiftTab()}end`;
   }
   try(ast: TryAst): string {
     if (ast.short) {
@@ -149,18 +153,20 @@ class Print {
   reduce(ast: ReduceAst) {
     return `reduce ${this.expression(ast.expr)} as ${
       ast.var
-    } (${this.expression(ast.init, false)}; ${this.expression(
-      ast.update,
+    } (${this.tab()}${this.expression(
+      ast.init,
       false
-    )})`;
+    )};${this.br()}${this.expression(ast.update, false)}${this.shiftTab()})`;
   }
   foreach(ast: ForeachAst) {
     return `foreach ${this.expression(ast.expr)} as ${
       ast.var
-    } (${this.expression(ast.init, false)}; ${this.expression(
-      ast.update,
+    } (${this.tab()}${this.expression(
+      ast.init,
       false
-    )}${ast.extract ? '; ' + this.expression(ast.extract, false) : ''})`;
+    )};${this.br()}${this.expression(ast.update, false)}${
+      ast.extract ? `;${this.br()}` + this.expression(ast.extract, false) : ''
+    }${this.shiftTab()})`;
   }
   binary(ast: BinaryAst): string {
     const left = this.expression(
