@@ -42,6 +42,9 @@ export function print(ast: ProgAst): string {
 }
 
 class Print {
+  static INDENT = '  ';
+  private indent = 0;
+
   root(ast: ProgAst) {
     if (!ast.expr) return '';
     return this.expression(ast.expr, false);
@@ -201,22 +204,22 @@ class Print {
     return `[${ast.expr ? this.expression(ast.expr, false) : ''}]`;
   }
   object(ast: ObjectAst) {
-    return this.delimited(
-      '{ ',
-      '}',
-      ', ',
+    if (ast.entries.length === 0) return '{}';
+    return `{${this.tab()}${this.delimited(
+      '',
+      '',
+      `,${this.br()}`,
       ast.entries,
-      (item) => this.objectEntry(item),
-      true
-    );
+      (item) => this.objectEntry(item)
+    )},${this.shiftTab()}}`;
   }
   var(ast: VarAst) {
     return `${ast.name}`;
   }
   varDeclaration(ast: VarDeclarationAst) {
-    return `(${this.expression(ast.expr)}) as ${this.destructuring(
+    return `${this.expression(ast.expr)} as ${this.destructuring(
       ast.destructuring
-    )} | ${this.expression(ast.next)}`;
+    )} | ${this.expression(ast.next, false)}`;
   }
   arrayDestructuring(ast: ArrayDestructuringAst): string {
     return this.delimited('[ ', ' ]', ', ', ast.destructuring, (item) =>
@@ -345,9 +348,7 @@ class Print {
   objectEntryKey(ast: string | ExpressionAst | string) {
     return typeof ast === 'string'
       ? ast
-      : ast.type === 'str'
-      ? this.expression(ast)
-      : `(${this.expression(ast)})`;
+      : this.expression(ast, ast.type !== 'str');
   }
   destructuring(ast: DestructuringAst): string {
     switch (ast.type) {
@@ -417,5 +418,20 @@ class Print {
         ? ast.expr.type === 'num'
         : typesWithNoNeedForBrackets.includes(ast.type));
     return !noNeedForBrackets;
+  }
+  br() {
+    let out = '\n';
+    for (let i = 0; i < this.indent; i++) {
+      out += Print.INDENT;
+    }
+    return out;
+  }
+  tab() {
+    this.indent++;
+    return this.br();
+  }
+  shiftTab() {
+    this.indent--;
+    return this.br();
   }
 }

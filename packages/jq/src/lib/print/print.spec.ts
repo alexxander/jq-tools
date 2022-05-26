@@ -287,7 +287,7 @@ describe('print', () => {
             type: 'root',
           })
         )
-      ).toEqual('1 + 2 + - def test: .; def test(a): .; 1 + 4');
+      ).toEqual('1 + 2 + - (def test: .; def test(a): .; 1 + 4)');
     });
   });
 
@@ -594,7 +594,7 @@ describe('print', () => {
           })
         )
       ).toEqual(
-        '{ a: 1, "$a": 2, "@a": 3, "1": 4, ($var): 5, "\\($var):\\($var)": 6, }'
+        '{\n  a: 1,\n  "$a": 2,\n  "@a": 3,\n  "1": 4,\n  ($var): 5,\n  "\\($var):\\($var)": 6,\n}'
       );
     });
     it('object - keywords', () => {
@@ -612,7 +612,7 @@ describe('print', () => {
             type: 'root',
           })
         )
-      ).toEqual('{ label: 1, try: 2, catch: 3, }');
+      ).toEqual('{\n  label: 1,\n  try: 2,\n  catch: 3,\n}');
     });
     it('trailing comma', () => {
       expect(
@@ -628,7 +628,33 @@ describe('print', () => {
             type: 'root',
           })
         )
-      ).toEqual('{ a: 1, b: 2, }');
+      ).toEqual('{\n  a: 1,\n  b: 2,\n}');
+    });
+    it('nested', () => {
+      expect(
+        print(
+          progAst({
+            expr: {
+              entries: [
+                { key: 'a', value: { type: 'num', value: 1 } },
+                { key: 'b', value: { type: 'num', value: 2 } },
+                {
+                  key: 'c',
+                  value: {
+                    entries: [
+                      { key: 'a', value: { type: 'num', value: 1 } },
+                      { key: 'b', value: { type: 'num', value: 2 } },
+                    ],
+                    type: 'object',
+                  },
+                },
+              ],
+              type: 'object',
+            },
+            type: 'root',
+          })
+        )
+      ).toEqual('{\n  a: 1,\n  b: 2,\n  c: {\n    a: 1,\n    b: 2,\n  },\n}');
     });
   });
 
