@@ -306,9 +306,7 @@ export class Parser {
   }
 
   parseExpression(ignoreOp?: string[]): ExpressionAst {
-    return this.maybeVariable(() =>
-      this.maybeBinary(this.parseAtomOrControlStructure(), 0, ignoreOp)
-    );
+    return this.maybeBinary(this.parseAtomOrControlStructure(), 0, ignoreOp);
   }
 
   maybeShortTry(cb: () => ExpressionAst): ExpressionAst {
@@ -332,10 +330,10 @@ export class Parser {
     if (this.isKw('if')) return this.parseIf();
     if (this.isKw('reduce')) return this.parseReduce();
     if (this.isKw('foreach')) return this.parseForeach();
-    return this.parseAtom();
+    return this.parseAtom(true);
   }
 
-  parseAtom(): ExpressionAst {
+  parseAtom(maybeVariable: boolean): ExpressionAst {
     if (this.isKw('def')) {
       return this.parseDef();
     }
@@ -347,29 +345,32 @@ export class Parser {
         expr: this.parseAtomOrControlStructure(),
       };
 
-    return this.atomMaybe(() => {
-      if (this.isPunc('(')) {
-        this.input.next();
-        const exp = this.parseExpression();
-        this.skipPunc(')');
-        return exp;
-      }
+    const maybe = () =>
+      this.atomMaybe(() => {
+        if (this.isPunc('(')) {
+          this.input.next();
+          const exp = this.parseExpression();
+          this.skipPunc(')');
+          return exp;
+        }
 
-      if (this.isOp('.')) return this.parseIdentity();
-      if (this.isOp('..')) return this.parseRecursiveDescent();
-      if (this.isPunc('[')) return this.parseArray();
-      if (this.isPunc('{')) return this.parseObject();
-      if (this.isVar()) return this.parseVar();
-      if (this.isIdent() || this.isKw('not')) return this.parseFilter();
-      if (this.isFormat()) return this.parseFormat();
-      if (this.isStr()) return this.parseStr();
+        if (this.isOp('.')) return this.parseIdentity();
+        if (this.isOp('..')) return this.parseRecursiveDescent();
+        if (this.isPunc('[')) return this.parseArray();
+        if (this.isPunc('{')) return this.parseObject();
+        if (this.isVar()) return this.parseVar();
+        if (this.isIdent() || this.isKw('not')) return this.parseFilter();
+        if (this.isFormat()) return this.parseFormat();
+        if (this.isStr()) return this.parseStr();
 
-      if (this.isNum() || this.isBool() || this.isNull()) {
-        return this.input.next() as any;
-      }
+        if (this.isNum() || this.isBool() || this.isNull()) {
+          return this.input.next() as any;
+        }
 
-      throw this.unexpected();
-    });
+        throw this.unexpected();
+      });
+
+    return maybeVariable ? this.maybeVariable(maybe) : maybe();
   }
 
   maybeBinary(
@@ -677,7 +678,7 @@ export class Parser {
 
   parseReduce(): ReduceAst {
     this.skipKw('reduce');
-    const expr = this.parseAtom();
+    const expr = this.parseAtom(false);
     this.skipKw('as');
     const varName = this.skipVar().value;
     const args = this.delimited(
@@ -700,7 +701,7 @@ export class Parser {
 
   parseForeach(): ForeachAst {
     this.skipKw('foreach');
-    const expr = this.parseAtom();
+    const expr = this.parseAtom(false);
     this.skipKw('as');
     const varName = this.skipVar().value;
     const args = this.delimited(

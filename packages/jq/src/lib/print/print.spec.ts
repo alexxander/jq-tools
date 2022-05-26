@@ -1071,6 +1071,67 @@ describe('print', () => {
         )
       ).toEqual('. as $var | $var');
     });
+    it('control structure', () => {
+      expect(
+        print({
+          expr: {
+            destructuring: { name: '$var', type: 'var' },
+            expr: {
+              cond: { type: 'bool', value: true },
+              else: { type: 'bool', value: false },
+              then: { type: 'bool', value: true },
+              type: 'if',
+            },
+            next: { type: 'identity' },
+            type: 'varDeclaration',
+          },
+          type: 'root',
+        })
+      ).toEqual('(if true\n  then true\n  else false\nend) as $var | .');
+    });
+    describe('precedence', () => {
+      it('around declaration', () => {
+        expect(
+          print(
+            progAst({
+              expr: {
+                left: { type: 'identity' },
+                operator: '*',
+                right: {
+                  destructuring: { name: '$var', type: 'var' },
+                  expr: { type: 'num', value: 1 },
+                  next: { type: 'identity' },
+                  type: 'varDeclaration',
+                },
+                type: 'binary',
+              },
+              type: 'root',
+            })
+          )
+        ).toEqual('. * (1 as $var | .)');
+      });
+      it('around value', () => {
+        expect(
+          print(
+            progAst({
+              expr: {
+                destructuring: { name: '$var', type: 'var' },
+                expr: {
+                  left: { type: 'identity' },
+                  operator: '*',
+                  right: { type: 'num', value: 1 },
+                  type: 'binary',
+                },
+                next: { type: 'identity' },
+                type: 'varDeclaration',
+              },
+
+              type: 'root',
+            })
+          )
+        ).toEqual('(. * 1) as $var | .');
+      });
+    });
     it('array destructuring', () => {
       expect(
         print(

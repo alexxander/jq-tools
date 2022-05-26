@@ -174,14 +174,14 @@ class Print {
       ast.left.type === 'binary'
         ? Parser.getPrecedence(ast.left.operator) <
             Parser.getPrecedence(ast.operator)
-        : this.canNeedBrackets(ast.left)
+        : this.needsBrackets(ast.left)
     );
     const right = this.expression(
       ast.right,
       ast.right.type === 'binary'
         ? Parser.getPrecedence(ast.right.operator) <
             Parser.getPrecedence(ast.operator)
-        : this.canNeedBrackets(ast.right)
+        : this.needsBrackets(ast.right)
     );
 
     return `${left}${ast.operator === ',' ? '' : ' '}${ast.operator} ${right}`;
@@ -223,9 +223,13 @@ class Print {
     return `${ast.name}`;
   }
   varDeclaration(ast: VarDeclarationAst) {
-    return `${this.expression(ast.expr)} as ${this.destructuring(
-      ast.destructuring
-    )} | ${this.expression(ast.next, false)}`;
+    return `${this.expression(
+      ast.expr,
+      this.varDeclarationNeedsBrackets(ast.expr)
+    )} as ${this.destructuring(ast.destructuring)} | ${this.expression(
+      ast.next,
+      false
+    )}`;
   }
   arrayDestructuring(ast: ArrayDestructuringAst): string {
     return this.delimited('[ ', ' ]', ', ', ast.destructuring, (item) =>
@@ -246,15 +250,12 @@ class Print {
     return '..';
   }
 
-  expression(
-    ast: ExpressionAst,
-    tryBrackets = this.canNeedBrackets(ast)
-  ): string {
+  expression(ast: ExpressionAst, brackets = this.needsBrackets(ast)): string {
     switch (ast.type) {
       case 'binary':
-        return this.tryBrackets(this.binary(ast), tryBrackets);
+        return this.brackets(this.binary(ast), brackets);
       default:
-        return this.tryBrackets(this.atom(ast), tryBrackets);
+        return this.brackets(this.atom(ast), brackets);
     }
   }
   atom(ast: AtomAst): string {
@@ -337,7 +338,7 @@ class Print {
       ast.value
         ? `: ${this.expression(
             ast.value,
-            this.canObjectValueNeedBrackets(ast.value)
+            this.objectValueNeedsBrackets(ast.value)
           )}`
         : ''
     }`;
@@ -367,12 +368,12 @@ class Print {
     }
   }
 
-  tryBrackets(val: string, brackets: boolean) {
+  brackets(val: string, brackets: boolean) {
     if (brackets) return `(${val})`;
     return val;
   }
 
-  canNeedBrackets(ast: ExpressionAst) {
+  needsBrackets(ast: ExpressionAst) {
     const typesWithNoNeedForBrackets: ExpressionAst['type'][] = [
       'identity',
       'num',
@@ -401,7 +402,7 @@ class Print {
     return !noNeedForBrackets;
   }
 
-  canObjectValueNeedBrackets(ast: ExpressionAst) {
+  objectValueNeedsBrackets(ast: ExpressionAst) {
     const typesWithNoNeedForBrackets: ExpressionAst['type'][] = [
       'identity',
       'num',
@@ -425,6 +426,30 @@ class Print {
         : typesWithNoNeedForBrackets.includes(ast.type));
     return !noNeedForBrackets;
   }
+
+  varDeclarationNeedsBrackets(ast: ExpressionAst) {
+    const typesWithNoNeedForBrackets: ExpressionAst['type'][] = [
+      'identity',
+      'num',
+      'str',
+      'bool',
+      'null',
+      'format',
+      'filter',
+      'var',
+      'index',
+      'slice',
+      'iterator',
+      'array',
+      'object',
+      'recursiveDescent',
+    ];
+    const noNeedForBrackets =
+      (ast.type === 'try' && ast.short) ||
+      typesWithNoNeedForBrackets.includes(ast.type);
+    return !noNeedForBrackets;
+  }
+
   br() {
     let out = '\n';
     for (let i = 0; i < this.indent; i++) {
@@ -432,10 +457,12 @@ class Print {
     }
     return out;
   }
+
   tab() {
     this.indent++;
     return this.br();
   }
+
   shiftTab() {
     this.indent--;
     return this.br();

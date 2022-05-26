@@ -1,20 +1,34 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`parse control structures foreach too few args: foreach too few args 1`] = `
+exports[`parse control structures foreach too few args 1`] = `
 "Expected punctuation: \\";\\", received punctuation: \\")\\" (1:23)
 
 foreach .[] as $item (0)
 -----------------------^"
 `;
 
-exports[`parse control structures foreach too many args: foreach too many args 1`] = `
+exports[`parse control structures foreach too many args 1`] = `
 "Expected punctuation: \\")\\", received punctuation: \\";\\" (1:37)
 
 foreach .[] as $item (0; .+$item; .+1; .)
 -------------------------------------^"
 `;
 
-exports[`parse wrong def delimiter: wrong def delimiter 1`] = `
+exports[`parse variables atoms only 1`] = `
+"Unexpected keyword: \\"as\\" (1:33)
+
+if true then true else false end as $var | .
+---------------------------------^"
+`;
+
+exports[`parse variables expect pipe 1`] = `
+"Expected operator: \\"|\\", received EOF (1:9)
+
+. as $var
+---------^"
+`;
+
+exports[`parse wrong def delimiter 1`] = `
 "Expected punctuation: \\";\\", received operator: \\",\\" (1:10)
 
 def func(a, $b): $b | a; .

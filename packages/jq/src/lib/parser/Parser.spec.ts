@@ -261,7 +261,7 @@ describe('parse', () => {
   it('wrong def delimiter', () => {
     expect(() =>
       parse('def func(a, $b): $b | a; .')
-    ).toThrowErrorMatchingSnapshot('wrong def delimiter');
+    ).toThrowErrorMatchingSnapshot();
   });
 
   describe('operators', () => {
@@ -888,13 +888,13 @@ describe('parse', () => {
       it('too few args', () => {
         expect(() =>
           parse('foreach .[] as $item (0)')
-        ).toThrowErrorMatchingSnapshot('foreach too few args');
+        ).toThrowErrorMatchingSnapshot();
       });
 
       it('too many args', () => {
         expect(() =>
           parse('foreach .[] as $item (0; .+$item; .+1; .)')
-        ).toThrowErrorMatchingSnapshot('foreach too many args');
+        ).toThrowErrorMatchingSnapshot();
       });
     });
   });
@@ -920,6 +920,25 @@ describe('parse', () => {
           type: 'root',
         })
       );
+    });
+    it('expect pipe', () => {
+      expect(() => parse('. as $var')).toThrowErrorMatchingSnapshot();
+    });
+    it('atoms only', () => {
+      expect(() =>
+        parse('if true then true else false end as $var | .')
+      ).toThrowErrorMatchingSnapshot();
+    });
+    describe('precedence', () => {
+      it('times', () => {
+        expect(parse('.*1 as $var|.')).toEqual(parse('.*(1 as $var|.)'));
+      });
+      it('pipe', () => {
+        expect(parse('.|1 as $var|.')).toEqual(parse('.|(1 as $var|.)'));
+      });
+      it('minus', () => {
+        expect(parse('-1 as $var|.')).toEqual(parse('-(1 as $var|.)'));
+      });
     });
     it('array destructuring', () => {
       expect(parse('[1,2,3] as [$a, $b, $c] | $a+$b+$c')).toEqual(
