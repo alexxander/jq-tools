@@ -358,7 +358,7 @@ describe('print', () => {
               type: 'root',
             })
           )
-        ).toEqual('- foreach .[] as $item (0; . + $item) | - .');
+        ).toEqual('- foreach .[] as $item (\n  0;\n  . + $item\n) | - .');
       });
     });
     describe('binary', () => {
