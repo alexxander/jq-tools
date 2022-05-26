@@ -8,12 +8,12 @@ For more info about the jq language see its official [homepage](https://stedolan
 ## Installation
 
 ```bash
-yarn install -E @jq-tools/jq
+yarn add -E @jq-tools/jq
 ```
 
 ## Usage
 
-### jq
+### Interpreter
 
 NOTE: This feature is not implemented yet.
 
@@ -32,9 +32,7 @@ Array.from(transform([1, 2, 3]));
 [2, 4, 6]
 ```
 
-### Formatting
-
-NOTE: This feature is not implemented yet.
+### Formatter
 
 #### Input
 
@@ -51,17 +49,36 @@ lastName: .surname
 #### Output
 
 ```jq
-[
-  .[] | {
-    firstName: .firstName,
-    lastName: .surname,
-  }
-]
+[.[] | {
+  "firstName": .firstName,
+  lastName: .surname,
+}]
 ```
 
-### Parsing
+### Code Generator
 
-The parser should be able to handle any jq syntax except for the modules
+#### Input
+
+```js
+import { print } from '@jq-tools/jq';
+
+print({
+  expr: { expr: { type: 'identity' }, type: 'iterator' },
+  type: 'root',
+});
+```
+
+#### Output
+
+```jq
+.[]
+```
+
+### Parser
+
+The parser should be able to handle any jq syntax except for the modules.
+
+For more information about the AST refer to its [TypeScript types](https://github.com/alexxander/jq-tools/blob/main/packages/jq/src/lib/parser/AST.ts).
 
 #### Input
 
