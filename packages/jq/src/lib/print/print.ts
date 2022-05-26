@@ -44,7 +44,7 @@ export function print(ast: ProgAst): string {
 class Print {
   root(ast: ProgAst) {
     if (!ast.expr) return '';
-    return this.expression(ast.expr);
+    return this.expression(ast.expr, false);
   }
   def(ast: DefAst) {
     return `def ${ast.name}${
@@ -58,7 +58,10 @@ class Print {
             false
           )
         : ''
-    }: ${this.expression(ast.body)}; ${this.expression(ast.next)}`;
+    }: ${this.expression(ast.body, false)}; ${this.expression(
+      ast.next,
+      false
+    )}`;
   }
   filterArg(ast: FilterArgAst) {
     return ast.name;
@@ -109,7 +112,7 @@ class Print {
     return `${ast.name}${
       ast.args.length > 0
         ? this.delimited('(', ')', ';', ast.args, (item) =>
-            this.expression(item)
+            this.expression(item, false)
           )
         : ''
     }`;
@@ -143,37 +146,36 @@ class Print {
   reduce(ast: ReduceAst) {
     return `reduce ${this.expression(ast.expr)} as ${
       ast.var
-    } (${this.expression(ast.init)}; ${this.expression(ast.update)})`;
+    } (${this.expression(ast.init, false)}; ${this.expression(
+      ast.update,
+      false
+    )})`;
   }
   foreach(ast: ForeachAst) {
     return `foreach ${this.expression(ast.expr)} as ${
       ast.var
-    } (${this.expression(ast.init)}; ${this.expression(ast.update)}${
-      ast.extract ? '; ' + this.expression(ast.extract) : ''
-    })`;
+    } (${this.expression(ast.init, false)}; ${this.expression(
+      ast.update,
+      false
+    )}${ast.extract ? '; ' + this.expression(ast.extract, false) : ''})`;
   }
-  binary(ast: BinaryAst, brackets = false): string {
-    const left =
-      ast.left.type === 'binary' &&
-      Parser.getPrecedence(ast.left.operator) <
-        Parser.getPrecedence(ast.operator)
-        ? this.binary(ast.left, true)
-        : ast.left.type === 'varDeclaration'
-        ? `(${this.varDeclaration(ast.left)})`
-        : this.expression(ast.left);
-    const right =
-      ast.right.type === 'binary' &&
-      Parser.getPrecedence(ast.right.operator) <
-        Parser.getPrecedence(ast.operator)
-        ? this.binary(ast.right, true)
-        : ast.right.type === 'varDeclaration'
-        ? `(${this.varDeclaration(ast.right)})`
-        : this.expression(ast.right);
-    const out = `${left}${ast.operator === ',' ? '' : ' '}${
-      ast.operator
-    } ${right}`;
+  binary(ast: BinaryAst): string {
+    const left = this.expression(
+      ast.left,
+      ast.left.type === 'binary'
+        ? Parser.getPrecedence(ast.left.operator) <
+            Parser.getPrecedence(ast.operator)
+        : this.canNeedBrackets(ast.left)
+    );
+    const right = this.expression(
+      ast.right,
+      ast.right.type === 'binary'
+        ? Parser.getPrecedence(ast.right.operator) <
+            Parser.getPrecedence(ast.operator)
+        : this.canNeedBrackets(ast.right)
+    );
 
-    return brackets ? `(${out})` : out;
+    return `${left}${ast.operator === ',' ? '' : ' '}${ast.operator} ${right}`;
   }
   unary(ast: UnaryAst) {
     return `${ast.operator}${
@@ -184,19 +186,19 @@ class Print {
     return `${this.expression(ast.expr)}${
       typeof ast.index === 'string'
         ? `${ast.expr.type === 'identity' ? '' : '.'}${ast.index}`
-        : `[${this.expression(ast.index)}]`
+        : `[${this.expression(ast.index, false)}]`
     }`;
   }
   slice(ast: SliceAst) {
     return `${this.expression(ast.expr)}[${
-      ast.from ? this.expression(ast.from) : ''
-    }:${ast.to ? this.expression(ast.to) : ''}]`;
+      ast.from ? this.expression(ast.from, false) : ''
+    }:${ast.to ? this.expression(ast.to, false) : ''}]`;
   }
   iterator(ast: IteratorAst) {
     return `${this.expression(ast.expr)}[]`;
   }
   array(ast: ArrayAst) {
-    return `[${ast.expr ? this.expression(ast.expr) : ''}]`;
+    return `[${ast.expr ? this.expression(ast.expr, false) : ''}]`;
   }
   object(ast: ObjectAst) {
     return this.delimited(
@@ -235,12 +237,15 @@ class Print {
     return '..';
   }
 
-  expression(ast: ExpressionAst): string {
+  expression(
+    ast: ExpressionAst,
+    tryBrackets = this.canNeedBrackets(ast)
+  ): string {
     switch (ast.type) {
       case 'binary':
-        return this.binary(ast);
+        return this.tryBrackets(this.binary(ast), tryBrackets);
       default:
-        return this.atom(ast);
+        return this.tryBrackets(this.atom(ast), tryBrackets);
     }
   }
   atom(ast: AtomAst): string {
@@ -320,7 +325,12 @@ class Print {
   }
   objectEntry(ast: ObjectEntryAst) {
     return `${this.objectEntryKey(ast.key)}${
-      ast.value ? `: ${this.expression(ast.value)}` : ''
+      ast.value
+        ? `: ${this.expression(
+            ast.value,
+            this.canObjectValueNeedBrackets(ast.value)
+          )}`
+        : ''
     }`;
   }
   objectDestructuringEntry(ast: ObjectDestructuringEntryAst) {
@@ -348,5 +358,64 @@ class Print {
       case 'objectDestructuring':
         return this.objectDestructuring(ast);
     }
+  }
+
+  tryBrackets(val: string, brackets: boolean) {
+    if (brackets) return `(${val})`;
+    return val;
+  }
+
+  canNeedBrackets(ast: ExpressionAst) {
+    const typesWithNoNeedForBrackets: ExpressionAst['type'][] = [
+      'identity',
+      'num',
+      'str',
+      'bool',
+      'null',
+      'format',
+      'filter',
+      'var',
+      'index',
+      'slice',
+      'iterator',
+      'array',
+      'object',
+      'recursiveDescent',
+      'unary',
+      'label',
+      'break',
+      'if',
+      'reduce',
+      'foreach',
+    ];
+    const noNeedForBrackets =
+      (ast.type === 'try' && ast.short) ||
+      typesWithNoNeedForBrackets.includes(ast.type);
+    return !noNeedForBrackets;
+  }
+
+  canObjectValueNeedBrackets(ast: ExpressionAst) {
+    const typesWithNoNeedForBrackets: ExpressionAst['type'][] = [
+      'identity',
+      'num',
+      'str',
+      'bool',
+      'null',
+      'format',
+      'filter',
+      'var',
+      'index',
+      'slice',
+      'iterator',
+      'array',
+      'object',
+      'recursiveDescent',
+    ];
+    const noNeedForBrackets =
+      (ast.type === 'try' && ast.short) ||
+      (ast.type === 'unary'
+        ? ast.expr.type === 'num'
+        : typesWithNoNeedForBrackets.includes(ast.type));
+    return !noNeedForBrackets;
   }
 }

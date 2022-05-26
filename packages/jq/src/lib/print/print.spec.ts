@@ -1,6 +1,7 @@
 import { print } from './print';
 import { ProgAst } from '../parser/AST';
 import { parse } from '../parser/Parser';
+
 function progAst(ast: ProgAst) {
   return ast;
 }
@@ -434,7 +435,7 @@ describe('print', () => {
               type: 'root',
             })
           )
-        ).toEqual('a , b | c , d');
+        ).toEqual('a, b | c, d');
       });
       it('pipe and comma with brackets', () => {
         expect(
@@ -459,7 +460,27 @@ describe('print', () => {
               type: 'root',
             })
           )
-        ).toEqual('a , (b | c) , d');
+        ).toEqual('a, (b | c), d');
+      });
+      describe('var', () => {
+        it('right', () => {
+          const code = '. | (. as $var | $var)';
+          expect(parse(print(parse(code)))).toEqual(parse(code));
+        });
+        it('left', () => {
+          const code = '(. as $var | $var) | .';
+          expect(parse(print(parse(code)))).toEqual(parse(code));
+        });
+      });
+      describe('def', () => {
+        it('right', () => {
+          const code = '. | (def f: .; .)';
+          expect(parse(print(parse(code)))).toEqual(parse(code));
+        });
+        it('left', () => {
+          const code = '(def f: .; .) | .';
+          expect(parse(print(parse(code)))).toEqual(parse(code));
+        });
       });
     });
     it('bool', () => {
@@ -1184,14 +1205,6 @@ describe('print', () => {
       ).toEqual(
         '. as { a: { $a, arr: [ $b, $c, { $d, "key": $e, "arr": [ $f, $g ] } ] } } | $a'
       );
-    });
-    it('binary right', () => {
-      const code = '. | (. as $var | $var)';
-      expect(parse(print(parse(code)))).toEqual(parse(code));
-    });
-    it('binary left', () => {
-      const code = '(. as $var | $var) | .';
-      expect(parse(print(parse(code)))).toEqual(parse(code));
     });
   });
 });
