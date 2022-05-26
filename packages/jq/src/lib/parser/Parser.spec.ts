@@ -1076,5 +1076,41 @@ describe('parse', () => {
         })
       );
     });
+    it('binary right', () => {
+      expect(parse('. | (. as $var | $var)')).toEqual(
+        progAst({
+          expr: {
+            left: { type: 'identity' },
+            operator: '|',
+            right: {
+              destructuring: { name: '$var', type: 'var' },
+              expr: { type: 'identity' },
+              next: { name: '$var', type: 'var' },
+              type: 'varDeclaration',
+            },
+            type: 'binary',
+          },
+          type: 'root',
+        })
+      );
+    });
+    it('binary left', () => {
+      expect(parse('(. as $var | $var) | .')).toEqual(
+        progAst({
+          expr: {
+            left: {
+              destructuring: { name: '$var', type: 'var' },
+              expr: { type: 'identity' },
+              next: { name: '$var', type: 'var' },
+              type: 'varDeclaration',
+            },
+            operator: '|',
+            right: { type: 'identity' },
+            type: 'binary',
+          },
+          type: 'root',
+        })
+      );
+    });
   });
 });

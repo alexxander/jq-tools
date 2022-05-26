@@ -158,12 +158,16 @@ class Print {
       Parser.getPrecedence(ast.left.operator) <
         Parser.getPrecedence(ast.operator)
         ? this.binary(ast.left, true)
+        : ast.left.type === 'varDeclaration'
+        ? `(${this.varDeclaration(ast.left)})`
         : this.expression(ast.left);
     const right =
       ast.right.type === 'binary' &&
       Parser.getPrecedence(ast.right.operator) <
         Parser.getPrecedence(ast.operator)
         ? this.binary(ast.right, true)
+        : ast.right.type === 'varDeclaration'
+        ? `(${this.varDeclaration(ast.right)})`
         : this.expression(ast.right);
     const out = `${left}${ast.operator === ',' ? '' : ' '}${
       ast.operator
@@ -208,7 +212,7 @@ class Print {
     return `${ast.name}`;
   }
   varDeclaration(ast: VarDeclarationAst) {
-    return `${this.expression(ast.expr)} as ${this.destructuring(
+    return `(${this.expression(ast.expr)}) as ${this.destructuring(
       ast.destructuring
     )} | ${this.expression(ast.next)}`;
   }
