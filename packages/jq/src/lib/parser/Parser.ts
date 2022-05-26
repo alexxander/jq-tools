@@ -3,6 +3,7 @@ import {
   ArgAst,
   ArrayAst,
   ArrayDestructuringAst,
+  BinaryAst,
   BreakAst,
   DefAst,
   DestructuringAst,
@@ -60,6 +61,31 @@ export class Parser {
 
   static getPrecedence(op: string) {
     return Parser.precedence[op as keyof typeof Parser.precedence];
+  }
+
+  static normalizeBinaryAst(ast: BinaryAst): BinaryAst {
+    if (
+      ast.right.type === 'binary' &&
+      this.getPrecedence(ast.operator) ===
+        this.getPrecedence(ast.right.operator)
+    ) {
+      return this.normalizeBinaryAst({
+        type: 'binary',
+        left: this.normalizeBinaryAst({
+          type: 'binary',
+          left: ast.left,
+          operator: ast.operator,
+          right: ast.right.left,
+        }),
+        operator: ast.right.operator,
+        right:
+          ast.right.right.type === 'binary'
+            ? this.normalizeBinaryAst(ast.right.right)
+            : ast.right.right,
+      });
+    }
+
+    return ast;
   }
 
   constructor(private input: Tokenizer) {}
@@ -348,26 +374,26 @@ export class Parser {
 
   maybeBinary(
     left: ExpressionAst,
-    precedence = 0,
+    parentPrecedence = 0,
     ignoreOp: string[] = []
   ): ExpressionAst {
     const op = this.isOp() || this.isKw('and') || this.isKw('or');
     if (op && !ignoreOp.includes(op.value)) {
-      const otherPrecedence = Parser.getPrecedence(op.value);
-      if (otherPrecedence > precedence) {
+      const precedence = Parser.getPrecedence(op.value);
+      if (precedence > parentPrecedence) {
         this.input.next();
         return this.maybeBinary(
-          {
+          Parser.normalizeBinaryAst({
             type: 'binary',
             operator: op.value,
             left,
             right: this.maybeBinary(
               this.parseAtomOrControlStructure(),
-              otherPrecedence,
+              precedence,
               ignoreOp
             ),
-          },
-          precedence,
+          }),
+          parentPrecedence,
           ignoreOp
         );
       }

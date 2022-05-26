@@ -387,6 +387,31 @@ describe('print', () => {
           )
         ).toEqual('1 + 2 + 3 + 4');
       });
+      it('normalization', () => {
+        expect(
+          print(
+            progAst({
+              expr: {
+                left: { type: 'num', value: 1 },
+                operator: '+',
+                right: {
+                  left: { type: 'num', value: 2 },
+                  operator: '+',
+                  right: {
+                    left: { type: 'num', value: 3 },
+                    operator: '+',
+                    right: { type: 'num', value: 4 },
+                    type: 'binary',
+                  },
+                  type: 'binary',
+                },
+                type: 'binary',
+              },
+              type: 'root',
+            })
+          )
+        ).toEqual('1 + 2 + 3 + 4');
+      });
       it('addition vs multiplication', () => {
         expect(
           print(
