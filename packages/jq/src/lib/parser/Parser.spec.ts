@@ -1,87 +1,97 @@
 import { parse } from './Parser';
 import { ProgAst } from './AST';
-
-function progAst(ast: ProgAst) {
-  return ast;
-}
+import { print } from '../print/print';
 
 describe('parse', () => {
+  describe('empty program', () => {
+    testPrintAndParse('', { type: 'root' });
+  });
   describe('index', () => {
     // TODO Add tests for nested and optional indexes
-    it('ident', () => {
-      expect(parse('.a')).toEqual(
-        progAst({
-          expr: { expr: { type: 'identity' }, index: 'a', type: 'index' },
-          type: 'root',
-        })
-      );
+    describe('ident', () => {
+      testPrintAndParse('.a', {
+        expr: { expr: { type: 'identity' }, index: 'a', type: 'index' },
+        type: 'root',
+      });
     });
-    it('nested', () => {
-      expect(parse('.a.b[0].c')).toEqual(
-        progAst({
+    describe('nested', () => {
+      testPrintAndParse('.a.b[0].c', {
+        expr: {
           expr: {
             expr: {
-              expr: {
-                expr: { expr: { type: 'identity' }, index: 'a', type: 'index' },
-                index: 'b',
-                type: 'index',
-              },
-              index: { type: 'num', value: 0 },
+              expr: { expr: { type: 'identity' }, index: 'a', type: 'index' },
+              index: 'b',
               type: 'index',
             },
-            index: 'c',
+            index: { type: 'num', value: 0 },
             type: 'index',
           },
-          type: 'root',
-        })
-      );
+          index: 'c',
+          type: 'index',
+        },
+        type: 'root',
+      });
     });
-    it('optional', () => {
-      expect(parse('.a?.b')).toEqual(
-        progAst({
+    describe('optional', () => {
+      testPrintAndParse('.a?.b', {
+        expr: {
           expr: {
-            expr: {
-              body: { expr: { type: 'identity' }, index: 'a', type: 'index' },
-              short: true,
-              type: 'try',
+            body: { expr: { type: 'identity' }, index: 'a', type: 'index' },
+            short: true,
+            type: 'try',
+          },
+          index: 'b',
+          type: 'index',
+        },
+        type: 'root',
+      });
+    });
+    describe('str', () => {
+      testPrintAndParse('.["$abc"]', '."$abc"', {
+        expr: {
+          expr: { type: 'identity' },
+          index: { interpolated: false, type: 'str', value: '$abc' },
+          type: 'index',
+        },
+        type: 'root',
+      });
+    });
+    describe('num', () => {
+      testPrintAndParse('.[1]', {
+        expr: {
+          expr: { type: 'identity' },
+          index: { type: 'num', value: 1 },
+          type: 'index',
+        },
+        type: 'root',
+      });
+    });
+    describe('expression', () => {
+      testPrintAndParse('.[1 + 3 * $var]', '.[1+3*$var]', {
+        expr: {
+          expr: { type: 'identity' },
+          index: {
+            left: { type: 'num', value: 1 },
+            operator: '+',
+            right: {
+              left: { type: 'num', value: 3 },
+              operator: '*',
+              right: { name: '$var', type: 'var' },
+              type: 'binary',
             },
-            index: 'b',
-            type: 'index',
+            type: 'binary',
           },
-          type: 'root',
-        })
-      );
+          type: 'index',
+        },
+        type: 'root',
+      });
     });
-    it('str', () => {
-      expect(parse('."$abc"')).toEqual(
-        progAst({
+    describe('slice', () => {
+      describe('full', () => {
+        testPrintAndParse('.[1 + 3 * $var:500]', '.[1+3*$var:500]', {
           expr: {
             expr: { type: 'identity' },
-            index: { interpolated: false, type: 'str', value: '$abc' },
-            type: 'index',
-          },
-          type: 'root',
-        })
-      );
-    });
-    it('num', () => {
-      expect(parse('.[1]')).toEqual(
-        progAst({
-          expr: {
-            expr: { type: 'identity' },
-            index: { type: 'num', value: 1 },
-            type: 'index',
-          },
-          type: 'root',
-        })
-      );
-    });
-    it('expression', () => {
-      expect(parse('.[1+3*$var]')).toEqual(
-        progAst({
-          expr: {
-            expr: { type: 'identity' },
-            index: {
+            from: {
               left: { type: 'num', value: 1 },
               operator: '+',
               right: {
@@ -92,134 +102,101 @@ describe('parse', () => {
               },
               type: 'binary',
             },
-            type: 'index',
+            to: { type: 'num', value: 500 },
+            type: 'slice',
           },
           type: 'root',
-        })
-      );
-    });
-    describe('slice', () => {
-      it('full', () => {
-        expect(parse('.[1+3*$var:500]')).toEqual(
-          progAst({
-            expr: {
-              expr: { type: 'identity' },
-              from: {
-                left: { type: 'num', value: 1 },
-                operator: '+',
-                right: {
-                  left: { type: 'num', value: 3 },
-                  operator: '*',
-                  right: { name: '$var', type: 'var' },
-                  type: 'binary',
-                },
-                type: 'binary',
-              },
-              to: { type: 'num', value: 500 },
-              type: 'slice',
-            },
-            type: 'root',
-          })
-        );
+        });
       });
-      it('left', () => {
-        expect(parse('.[0:]')).toEqual(
-          progAst({
-            expr: {
-              expr: { type: 'identity' },
-              from: { type: 'num', value: 0 },
-              type: 'slice',
-            },
-            type: 'root',
-          })
-        );
-      });
-      it('right', () => {
-        expect(parse('.[:2]')).toEqual(
-          progAst({
-            expr: {
-              expr: { type: 'identity' },
-              to: { type: 'num', value: 2 },
-              type: 'slice',
-            },
-            type: 'root',
-          })
-        );
-      });
-    });
-    it('iterator', () => {
-      expect(parse('.[]')).toEqual(
-        progAst({
-          expr: { expr: { type: 'identity' }, type: 'iterator' },
+      describe('left', () => {
+        testPrintAndParse('.[0:]', {
+          expr: {
+            expr: { type: 'identity' },
+            from: { type: 'num', value: 0 },
+            type: 'slice',
+          },
           type: 'root',
-        })
-      );
+        });
+      });
+      describe('right', () => {
+        testPrintAndParse('.[:2]', {
+          expr: {
+            expr: { type: 'identity' },
+            to: { type: 'num', value: 2 },
+            type: 'slice',
+          },
+          type: 'root',
+        });
+      });
+    });
+    describe('iterator', () => {
+      testPrintAndParse('.[]', {
+        expr: { expr: { type: 'identity' }, type: 'iterator' },
+        type: 'root',
+      });
     });
   });
   describe('simple expressions', () => {
-    it('identity', () => {
-      expect(parse('.')).toEqual(
-        progAst({ type: 'root', expr: { type: 'identity' } })
-      );
+    describe('identity', () => {
+      testPrintAndParse('.', { type: 'root', expr: { type: 'identity' } });
     });
-    it('recursiveDescent', () => {
-      expect(parse('..')).toEqual(
-        progAst({ type: 'root', expr: { type: 'recursiveDescent' } })
-      );
+    describe('recursiveDescent', () => {
+      testPrintAndParse('..', {
+        type: 'root',
+        expr: { type: 'recursiveDescent' },
+      });
     });
-    it('num', () => {
-      expect(parse('100')).toEqual(
-        progAst({ type: 'root', expr: { type: 'num', value: 100 } })
-      );
+    describe('num', () => {
+      testPrintAndParse('100', {
+        type: 'root',
+        expr: { type: 'num', value: 100 },
+      });
     });
-    it('string', () => {
-      expect(parse('"my string"')).toEqual(
-        progAst({
-          type: 'root',
-          expr: { type: 'str', interpolated: false, value: 'my string' },
-        })
-      );
+    describe('string', () => {
+      testPrintAndParse('"my string"', {
+        type: 'root',
+        expr: { type: 'str', interpolated: false, value: 'my string' },
+      });
     });
-    it('bool', () => {
-      expect(parse('false')).toEqual(
-        progAst({
-          type: 'root',
-          expr: { type: 'bool', value: false },
-        })
-      );
+    describe('bool', () => {
+      testPrintAndParse('false', {
+        type: 'root',
+        expr: { type: 'bool', value: false },
+      });
     });
-    it('null', () => {
-      expect(parse('null')).toEqual(
-        progAst({ type: 'root', expr: { type: 'null', value: null } })
-      );
+    describe('null', () => {
+      testPrintAndParse('null', {
+        type: 'root',
+        expr: { type: 'null', value: null },
+      });
     });
   });
   describe('def', () => {
-    it('simple', () => {
-      expect(parse('def func(a; $b): $b | a; .')).toEqual(
-        progAst({
-          type: 'root',
-          expr: {
-            type: 'def',
-            name: 'func',
-            args: [
-              { type: 'filterArg', name: 'a' },
-              { type: 'varArg', name: '$b' },
-            ],
-            body: {
-              type: 'binary',
-              operator: '|',
-              left: { type: 'var', name: '$b' },
-              right: { type: 'filter', name: 'a', args: [] },
-            },
-            next: { type: 'identity' },
+    describe('simple', () => {
+      testPrintAndParse('def func(a; $b): $b | a; .', {
+        type: 'root',
+        expr: {
+          type: 'def',
+          name: 'func/2',
+          args: [
+            { type: 'filterArg', name: 'a/0' },
+            { type: 'varArg', name: '$b' },
+          ],
+          body: {
+            type: 'binary',
+            operator: '|',
+            left: { type: 'var', name: '$b' },
+            right: { type: 'filter', name: 'a/0', args: [] },
           },
-        })
-      );
+          next: { type: 'identity' },
+        },
+      });
     });
-    it('inline', () => {
-      expect(parse('1 + 2 + - def test: .; def test(a): .; 1 + 4')).toEqual(
-        progAst({
+    describe('inline', () => {
+      testPrintAndParse(
+        '1 + 2 + - (def test: .; def test(a): .; 1 + 4)',
+        '1 + 2 + - def test: .; def test(a): .; 1 + 4',
+        {
           expr: {
             left: {
               left: { type: 'num', value: 1 },
@@ -232,11 +209,11 @@ describe('parse', () => {
               expr: {
                 args: [],
                 body: { type: 'identity' },
-                name: 'test',
+                name: 'test/0',
                 next: {
-                  args: [{ name: 'a', type: 'filterArg' }],
+                  args: [{ name: 'a/0', type: 'filterArg' }],
                   body: { type: 'identity' },
-                  name: 'test',
+                  name: 'test/1',
                   next: {
                     left: { type: 'num', value: 1 },
                     operator: '+',
@@ -253,8 +230,19 @@ describe('parse', () => {
             type: 'binary',
           },
           type: 'root',
-        })
+        }
       );
+    });
+    describe('no next', () => {
+      testPrintAndParse('def test: .;', {
+        expr: {
+          args: [],
+          body: { type: 'identity' },
+          name: 'test/0',
+          type: 'def',
+        },
+        type: 'root',
+      });
     });
   });
 
@@ -266,38 +254,36 @@ describe('parse', () => {
 
   describe('operators', () => {
     describe('unary', () => {
-      it('minus', () => {
-        expect(parse('-1')).toEqual(
-          progAst({
-            expr: {
-              expr: { type: 'num', value: 1 },
+      describe('minus', () => {
+        testPrintAndParse('-1', {
+          expr: {
+            expr: { type: 'num', value: 1 },
+            operator: '-',
+            type: 'unary',
+          },
+          type: 'root',
+        });
+      });
+      describe('minus in addition', () => {
+        testPrintAndParse('1 + -8', '1+-8', {
+          expr: {
+            left: { type: 'num', value: 1 },
+            operator: '+',
+            right: {
+              expr: { type: 'num', value: 8 },
               operator: '-',
               type: 'unary',
             },
-            type: 'root',
-          })
-        );
+            type: 'binary',
+          },
+          type: 'root',
+        });
       });
-      it('minus in addition', () => {
-        expect(parse('1+-8')).toEqual(
-          progAst({
-            expr: {
-              left: { type: 'num', value: 1 },
-              operator: '+',
-              right: {
-                expr: { type: 'num', value: 8 },
-                operator: '-',
-                type: 'unary',
-              },
-              type: 'binary',
-            },
-            type: 'root',
-          })
-        );
-      });
-      it('minus foreach', () => {
-        expect(parse('- foreach .[] as $item (0; . + $item) | - .')).toEqual(
-          progAst({
+      describe('minus foreach', () => {
+        testPrintAndParse(
+          '- foreach .[] as $item (\n  0;\n  . + $item\n) | - .',
+          '- foreach .[] as $item (0; . + $item) | - .',
+          {
             expr: {
               left: {
                 expr: {
@@ -324,220 +310,237 @@ describe('parse', () => {
               type: 'binary',
             },
             type: 'root',
-          })
+          }
         );
       });
     });
     describe('binary', () => {
-      it('addition', () => {
-        expect(parse('1+2+3+4')).toEqual(
-          progAst({
-            expr: {
-              left: {
-                left: {
-                  left: { type: 'num', value: 1 },
-                  operator: '+',
-                  right: { type: 'num', value: 2 },
-                  type: 'binary',
-                },
-                operator: '+',
-                right: { type: 'num', value: 3 },
-                type: 'binary',
-              },
-              operator: '+',
-              right: { type: 'num', value: 4 },
-              type: 'binary',
-            },
-            type: 'root',
-          })
-        );
-      });
-      it('normalization', () => {
-        expect(parse('1+(2+(3+4))')).toEqual(
-          progAst({
-            expr: {
-              left: {
-                left: {
-                  left: { type: 'num', value: 1 },
-                  operator: '+',
-                  right: { type: 'num', value: 2 },
-                  type: 'binary',
-                },
-                operator: '+',
-                right: { type: 'num', value: 3 },
-                type: 'binary',
-              },
-              operator: '+',
-              right: { type: 'num', value: 4 },
-              type: 'binary',
-            },
-            type: 'root',
-          })
-        );
-      });
-      it('addition vs multiplication', () => {
-        expect(parse('1+2*5+3')).toEqual(
-          progAst({
-            expr: {
-              left: {
-                left: { type: 'num', value: 1 },
-                operator: '+',
-                right: {
-                  left: { type: 'num', value: 2 },
-                  operator: '*',
-                  right: { type: 'num', value: 5 },
-                  type: 'binary',
-                },
-                type: 'binary',
-              },
-              operator: '+',
-              right: { type: 'num', value: 3 },
-              type: 'binary',
-            },
-            type: 'root',
-          })
-        );
-      });
-      it('addition vs multiplication with brackets', () => {
-        expect(parse('(1+2)*(5+3)')).toEqual(
-          progAst({
-            expr: {
-              left: {
-                left: { type: 'num', value: 1 },
-                operator: '+',
-                right: { type: 'num', value: 2 },
-                type: 'binary',
-              },
-              operator: '*',
-              right: {
-                left: { type: 'num', value: 5 },
-                operator: '+',
-                right: { type: 'num', value: 3 },
-                type: 'binary',
-              },
-              type: 'binary',
-            },
-            type: 'root',
-          })
-        );
-      });
-      it('pipe and comma', () => {
-        expect(parse('a , b | c , d')).toEqual(
-          progAst({
-            expr: {
-              left: {
-                left: { args: [], name: 'a', type: 'filter' },
-                operator: ',',
-                right: { args: [], name: 'b', type: 'filter' },
-                type: 'binary',
-              },
-              operator: '|',
-              right: {
-                left: { args: [], name: 'c', type: 'filter' },
-                operator: ',',
-                right: { args: [], name: 'd', type: 'filter' },
-                type: 'binary',
-              },
-              type: 'binary',
-            },
-            type: 'root',
-          })
-        );
-      });
-      it('pipe and comma with brackets', () => {
-        expect(parse('a , (b | c) , d')).toEqual(
-          progAst({
-            expr: {
-              left: {
-                left: { args: [], name: 'a', type: 'filter' },
-                operator: ',',
-                right: {
-                  left: { args: [], name: 'b', type: 'filter' },
-                  operator: '|',
-                  right: { args: [], name: 'c', type: 'filter' },
-                  type: 'binary',
-                },
-                type: 'binary',
-              },
-              operator: ',',
-              right: { args: [], name: 'd', type: 'filter' },
-              type: 'binary',
-            },
-            type: 'root',
-          })
-        );
-      });
-    });
-    it('bool', () => {
-      expect(parse('false and true or true and false | not')).toEqual(
-        progAst({
+      describe('addition', () => {
+        testPrintAndParse('1 + 2 + 3 + 4', '1+2+3+4', {
           expr: {
             left: {
               left: {
-                left: { type: 'bool', value: false },
-                operator: 'and',
-                right: { type: 'bool', value: true },
-                type: 'binary',
-              },
-              operator: 'or',
-              right: {
-                left: { type: 'bool', value: true },
-                operator: 'and',
-                right: { type: 'bool', value: false },
-                type: 'binary',
-              },
-              type: 'binary',
-            },
-            operator: '|',
-            right: { args: [], name: 'not', type: 'filter' },
-            type: 'binary',
-          },
-          type: 'root',
-        })
-      );
-    });
-  });
-  describe('array', () => {
-    it('array', () => {
-      expect(parse('[1,2,3]')).toEqual(
-        progAst({
-          expr: {
-            expr: {
-              left: {
                 left: { type: 'num', value: 1 },
-                operator: ',',
+                operator: '+',
                 right: { type: 'num', value: 2 },
                 type: 'binary',
               },
-              operator: ',',
+              operator: '+',
               right: { type: 'num', value: 3 },
               type: 'binary',
             },
-            type: 'array',
+            operator: '+',
+            right: { type: 'num', value: 4 },
+            type: 'binary',
           },
           type: 'root',
-        })
-      );
-    });
-    it('empty', () => {
-      expect(parse('[]')).toEqual(
-        progAst({
+        });
+      });
+      describe('normalization', () => {
+        it('parse', () => {
+          expectParse('1+(2+(3+4))', {
+            expr: {
+              left: {
+                left: {
+                  left: { type: 'num', value: 1 },
+                  operator: '+',
+                  right: { type: 'num', value: 2 },
+                  type: 'binary',
+                },
+                operator: '+',
+                right: { type: 'num', value: 3 },
+                type: 'binary',
+              },
+              operator: '+',
+              right: { type: 'num', value: 4 },
+              type: 'binary',
+            },
+            type: 'root',
+          });
+        });
+        testPrintAndParse('1 + 2 + 3 + 4', {
           expr: {
-            type: 'array',
+            left: { type: 'num', value: 1 },
+            operator: '+',
+            right: {
+              left: { type: 'num', value: 2 },
+              operator: '+',
+              right: {
+                left: { type: 'num', value: 3 },
+                operator: '+',
+                right: { type: 'num', value: 4 },
+                type: 'binary',
+              },
+              type: 'binary',
+            },
+            type: 'binary',
           },
           type: 'root',
-        })
-      );
+        });
+      });
+      describe('addition vs multiplication', () => {
+        testPrintAndParse('1 + 2 * 5 + 3', '1+2*5+3', {
+          expr: {
+            left: {
+              left: { type: 'num', value: 1 },
+              operator: '+',
+              right: {
+                left: { type: 'num', value: 2 },
+                operator: '*',
+                right: { type: 'num', value: 5 },
+                type: 'binary',
+              },
+              type: 'binary',
+            },
+            operator: '+',
+            right: { type: 'num', value: 3 },
+            type: 'binary',
+          },
+          type: 'root',
+        });
+      });
+      describe('addition vs multiplication with brackets', () => {
+        testPrintAndParse('(1 + 2) * (5 + 3)', '(1+2)*(5+3)', {
+          expr: {
+            left: {
+              left: { type: 'num', value: 1 },
+              operator: '+',
+              right: { type: 'num', value: 2 },
+              type: 'binary',
+            },
+            operator: '*',
+            right: {
+              left: { type: 'num', value: 5 },
+              operator: '+',
+              right: { type: 'num', value: 3 },
+              type: 'binary',
+            },
+            type: 'binary',
+          },
+          type: 'root',
+        });
+      });
+      describe('pipe and comma', () => {
+        testPrintAndParse('a, b | c, d', 'a , b | c , d', {
+          expr: {
+            left: {
+              left: { args: [], name: 'a/0', type: 'filter' },
+              operator: ',',
+              right: { args: [], name: 'b/0', type: 'filter' },
+              type: 'binary',
+            },
+            operator: '|',
+            right: {
+              left: { args: [], name: 'c/0', type: 'filter' },
+              operator: ',',
+              right: { args: [], name: 'd/0', type: 'filter' },
+              type: 'binary',
+            },
+            type: 'binary',
+          },
+          type: 'root',
+        });
+      });
+      describe('pipe and comma with brackets', () => {
+        testPrintAndParse('a, (b | c), d', 'a , (b | c) , d', {
+          expr: {
+            left: {
+              left: { args: [], name: 'a/0', type: 'filter' },
+              operator: ',',
+              right: {
+                left: { args: [], name: 'b/0', type: 'filter' },
+                operator: '|',
+                right: { args: [], name: 'c/0', type: 'filter' },
+                type: 'binary',
+              },
+              type: 'binary',
+            },
+            operator: ',',
+            right: { args: [], name: 'd/0', type: 'filter' },
+            type: 'binary',
+          },
+          type: 'root',
+        });
+      });
+      describe('print var', () => {
+        it('right', () => {
+          expectPrint('. | (. as $var | $var)');
+        });
+        it('left', () => {
+          expectPrint('(. as $var | $var) | .');
+        });
+      });
+      describe('print def', () => {
+        it('right', () => {
+          expectPrint('. | (def f: .; .)');
+        });
+        it('left', () => {
+          expectPrint('(def f: .; .) | .');
+        });
+      });
+    });
+    describe('bool', () => {
+      testPrintAndParse('false and true or true and false | not', {
+        expr: {
+          left: {
+            left: {
+              left: { type: 'bool', value: false },
+              operator: 'and',
+              right: { type: 'bool', value: true },
+              type: 'binary',
+            },
+            operator: 'or',
+            right: {
+              left: { type: 'bool', value: true },
+              operator: 'and',
+              right: { type: 'bool', value: false },
+              type: 'binary',
+            },
+            type: 'binary',
+          },
+          operator: '|',
+          right: { args: [], name: 'not/0', type: 'filter' },
+          type: 'binary',
+        },
+        type: 'root',
+      });
+    });
+  });
+  describe('array', () => {
+    describe('array', () => {
+      testPrintAndParse('[1, 2, 3]', '[1,2,3]', {
+        expr: {
+          expr: {
+            left: {
+              left: { type: 'num', value: 1 },
+              operator: ',',
+              right: { type: 'num', value: 2 },
+              type: 'binary',
+            },
+            operator: ',',
+            right: { type: 'num', value: 3 },
+            type: 'binary',
+          },
+          type: 'array',
+        },
+        type: 'root',
+      });
+    });
+    describe('empty', () => {
+      testPrintAndParse('[]', {
+        expr: {
+          type: 'array',
+        },
+        type: 'root',
+      });
     });
   });
   describe('object', () => {
-    it('object', () => {
-      expect(
-        parse(
-          '{a: 1, "$a": 2, "@a": 3, "1": 4, ($var): 5, "\\($var):\\($var)": 6}'
-        )
-      ).toEqual(
-        progAst({
+    describe('object', () => {
+      testPrintAndParse(
+        '{\n  a: 1,\n  "$a": 2,\n  "@a": 3,\n  "1": 4,\n  ($var): 5,\n  "\\($var):\\($var)": 6,\n}',
+        '{a: 1, "$a": 2, "@a": 3, "1": 4, ($var): 5, "\\($var):\\($var)": 6}',
+        {
           expr: {
             entries: [
               { key: 'a', value: { type: 'num', value: 1 } },
@@ -573,12 +576,14 @@ describe('parse', () => {
             type: 'object',
           },
           type: 'root',
-        })
+        }
       );
     });
-    it('object - keywords', () => {
-      expect(parse('{label: 1, try: 2, catch: 3}')).toEqual(
-        progAst({
+    describe('object - keywords', () => {
+      testPrintAndParse(
+        '{\n  label: 1,\n  try: 2,\n  catch: 3,\n}',
+        '{label: 1, try: 2, catch: 3}',
+        {
           expr: {
             entries: [
               { key: 'label', value: { type: 'num', value: 1 } },
@@ -588,27 +593,63 @@ describe('parse', () => {
             type: 'object',
           },
           type: 'root',
-        })
+        }
       );
     });
-    it('trailing comma', () => {
-      expect(parse('{a: 1, b: 2, }')).toEqual(
-        progAst({
+    describe('trailing comma', () => {
+      testPrintAndParse('{\n  a: 1,\n  b: 2,\n}', '{a: 1, b: 2, }', {
+        expr: {
+          entries: [
+            { key: 'a', value: { type: 'num', value: 1 } },
+            { key: 'b', value: { type: 'num', value: 2 } },
+          ],
+          type: 'object',
+        },
+        type: 'root',
+      });
+    });
+    describe('nested', () => {
+      testPrintAndParse(
+        '{\n  a: 1,\n  b: 2,\n  c: {\n    a: 1,\n    b: 2,\n  },\n}',
+        {
           expr: {
             entries: [
               { key: 'a', value: { type: 'num', value: 1 } },
               { key: 'b', value: { type: 'num', value: 2 } },
+              {
+                key: 'c',
+                value: {
+                  entries: [
+                    { key: 'a', value: { type: 'num', value: 1 } },
+                    { key: 'b', value: { type: 'num', value: 2 } },
+                  ],
+                  type: 'object',
+                },
+              },
             ],
             type: 'object',
           },
           type: 'root',
-        })
+        }
       );
+    });
+    describe('copy value', () => {
+      testPrintAndParse('{\n  a,\n  b,\n  c: 1,\n}', '{a, b, c: 1 }', {
+        expr: {
+          entries: [
+            { key: 'a' },
+            { key: 'b' },
+            { key: 'c', value: { type: 'num', value: 1 } },
+          ],
+          type: 'object',
+        },
+        type: 'root',
+      });
     });
   });
 
-  it('interpolation', () => {
-    expect(parse(`"\\(.):\\(.)"`)).toEqual({
+  describe('interpolation', () => {
+    testPrintAndParse('"\\(.):\\(.)"', {
       expr: {
         interpolated: true,
         parts: [{ type: 'identity' }, ':', { type: 'identity' }],
@@ -618,106 +659,108 @@ describe('parse', () => {
     });
   });
   describe('format', () => {
-    it('as filter', () => {
-      expect(parse('"Hello World!" | @base64')).toEqual(
-        progAst({
-          expr: {
-            left: { interpolated: false, type: 'str', value: 'Hello World!' },
-            operator: '|',
-            right: { name: '@base64', type: 'format' },
-            type: 'binary',
-          },
-          type: 'root',
-        })
-      );
+    describe('as filter', () => {
+      testPrintAndParse('"Hello World!" | @base64', {
+        expr: {
+          left: { interpolated: false, type: 'str', value: 'Hello World!' },
+          operator: '|',
+          right: { name: '@base64', type: 'format' },
+          type: 'binary',
+        },
+        type: 'root',
+      });
     });
-    it('interpolation', () => {
-      expect(parse('@base64 "---\\("Hello World!")---"')).toEqual(
-        progAst({
-          expr: {
-            name: '@base64',
-            str: {
-              interpolated: true,
-              parts: [
-                '---',
-                { interpolated: false, type: 'str', value: 'Hello World!' },
-                '---',
-              ],
-              type: 'str',
-            },
-            type: 'format',
-          },
-          type: 'root',
-        })
-      );
+    describe('str', () => {
+      testPrintAndParse('@base64 "abc"', {
+        expr: {
+          format: { name: '@base64', type: 'format' },
+          interpolated: false,
+          type: 'str',
+          value: 'abc',
+        },
+        type: 'root',
+      });
+    });
+    describe('str with interpolation', () => {
+      testPrintAndParse('@base64 "---\\("Hello World!")---"', {
+        expr: {
+          format: { name: '@base64', type: 'format' },
+          interpolated: true,
+          parts: [
+            '---',
+            { interpolated: false, type: 'str', value: 'Hello World!' },
+            '---',
+          ],
+          type: 'str',
+        },
+        type: 'root',
+      });
     });
   });
   describe('filter', () => {
-    it('without args', () => {
-      expect(parse('length')).toEqual(
-        progAst({
-          expr: { args: [], name: 'length', type: 'filter' },
-          type: 'root',
-        })
-      );
+    describe('without args', () => {
+      testPrintAndParse('length', {
+        expr: { args: [], name: 'length/0', type: 'filter' },
+        type: 'root',
+      });
     });
-    it('with one arg', () => {
-      expect(parse('map(.+1)')).toEqual(
-        progAst({
+    describe('with one arg', () => {
+      testPrintAndParse('map(. + 1)', 'map(.+1)', {
+        expr: {
+          args: [
+            {
+              left: { type: 'identity' },
+              operator: '+',
+              right: { type: 'num', value: 1 },
+              type: 'binary',
+            },
+          ],
+          name: 'map/1',
+          type: 'filter',
+        },
+        type: 'root',
+      });
+    });
+    describe('with multiple args', () => {
+      testPrintAndParse('[range(0;10;3)]', {
+        expr: {
           expr: {
             args: [
-              {
-                left: { type: 'identity' },
-                operator: '+',
-                right: { type: 'num', value: 1 },
-                type: 'binary',
-              },
+              { type: 'num', value: 0 },
+              { type: 'num', value: 10 },
+              { type: 'num', value: 3 },
             ],
-            name: 'map',
+            name: 'range/3',
             type: 'filter',
           },
-          type: 'root',
-        })
-      );
-    });
-    it('with multiple args', () => {
-      expect(parse('[range(0;10;3)]')).toEqual(
-        progAst({
-          expr: {
-            expr: {
-              args: [
-                { type: 'num', value: 0 },
-                { type: 'num', value: 10 },
-                { type: 'num', value: 3 },
-              ],
-              name: 'range',
-              type: 'filter',
-            },
-            type: 'array',
-          },
-          type: 'root',
-        })
-      );
+          type: 'array',
+        },
+        type: 'root',
+      });
     });
   });
 
   describe('control structures', () => {
     describe('if', () => {
-      it('if-then', () => {
-        expect(parse('if true then "yes" end')).toEqual(
-          progAst({
+      describe('if-then', () => {
+        testPrintAndParse(
+          'if true\n  then "yes"\nend',
+          'if true then "yes" end',
+          {
             expr: {
               cond: { type: 'bool', value: true },
               then: { interpolated: false, type: 'str', value: 'yes' },
               type: 'if',
             },
             type: 'root',
-          })
+          }
         );
       });
-      it('if-then-else', () => {
-        expect(parse('if true then "yes" else "no" end')).toEqual(
-          progAst({
+      describe('if-then-else', () => {
+        testPrintAndParse(
+          'if true\n  then "yes"\n  else "no"\nend',
+          'if true then "yes" else "no" end',
+          {
             expr: {
               cond: { type: 'bool', value: true },
               then: { interpolated: false, type: 'str', value: 'yes' },
@@ -725,16 +768,14 @@ describe('parse', () => {
               type: 'if',
             },
             type: 'root',
-          })
+          }
         );
       });
-      it('if-then-elif-elif-else', () => {
-        expect(
-          parse(
-            'if true then "yes" elif false then "never1" elif false then "never2" else "no" end'
-          )
-        ).toEqual(
-          progAst({
+      describe('if-then-elif-elif-else', () => {
+        testPrintAndParse(
+          'if true\n  then "yes"\n  elif false\n    then "never1"\n  elif false\n    then "never2"\n  else "no"\nend',
+          'if true then "yes" elif false then "never1" elif false then "never2" else "no" end',
+          {
             expr: {
               cond: { type: 'bool', value: true },
               then: { interpolated: false, type: 'str', value: 'yes' },
@@ -752,77 +793,75 @@ describe('parse', () => {
               type: 'if',
             },
             type: 'root',
-          })
+          }
         );
       });
     });
     describe('try', () => {
-      it('try', () => {
-        expect(parse('try error("ERROR!")')).toEqual(
-          progAst({
-            expr: {
-              body: {
-                args: [{ interpolated: false, type: 'str', value: 'ERROR!' }],
-                name: 'error',
-                type: 'filter',
-              },
-              short: false,
-              type: 'try',
-            },
-            type: 'root',
-          })
-        );
-      });
-      it('try-catch', () => {
-        expect(parse('try error("ERROR!") catch .')).toEqual(
-          progAst({
-            expr: {
-              body: {
-                args: [{ interpolated: false, type: 'str', value: 'ERROR!' }],
-                name: 'error',
-                type: 'filter',
-              },
-              catch: { type: 'identity' },
-              short: false,
-              type: 'try',
-            },
-            type: 'root',
-          })
-        );
-      });
-      it('short', () => {
-        expect(parse('error("ERROR!")?')).toEqual(
-          progAst({
-            expr: {
-              body: {
-                args: [{ interpolated: false, type: 'str', value: 'ERROR!' }],
-                name: 'error',
-                type: 'filter',
-              },
-              short: true,
-              type: 'try',
-            },
-            type: 'root',
-          })
-        );
-      });
-    });
-    it('label-break', () => {
-      expect(parse('label $out | break $out')).toEqual(
-        progAst({
+      describe('try', () => {
+        testPrintAndParse('try error("ERROR!")', {
           expr: {
-            left: { type: 'label', value: '$out' },
-            operator: '|',
-            right: { type: 'break', value: '$out' },
-            type: 'binary',
+            body: {
+              args: [{ interpolated: false, type: 'str', value: 'ERROR!' }],
+              name: 'error/1',
+              type: 'filter',
+            },
+            short: false,
+            type: 'try',
           },
           type: 'root',
-        })
-      );
+        });
+      });
+      describe('try-catch', () => {
+        testPrintAndParse('try error("ERROR!") catch .', {
+          expr: {
+            body: {
+              args: [{ interpolated: false, type: 'str', value: 'ERROR!' }],
+              name: 'error/1',
+              type: 'filter',
+            },
+            catch: { type: 'identity' },
+            short: false,
+            type: 'try',
+          },
+          type: 'root',
+        });
+      });
+      describe('short', () => {
+        testPrintAndParse('error("ERROR!")?', {
+          expr: {
+            body: {
+              args: [{ interpolated: false, type: 'str', value: 'ERROR!' }],
+              name: 'error/1',
+              type: 'filter',
+            },
+            short: true,
+            type: 'try',
+          },
+          type: 'root',
+        });
+      });
     });
-    it('reduce', () => {
-      expect(parse('reduce .[] as $item (0; .+$item)')).toEqual(
-        progAst({
+    describe('label-break', () => {
+      describe('simple', () => {
+        testPrintAndParse('label $out | break $out', {
+          expr: {
+            type: 'label',
+            value: '$out',
+            next: { type: 'break', value: '$out' },
+          },
+          type: 'root',
+        });
+      });
+      it('expect next', () => {
+        expect(() => parse('label $out')).toThrowErrorMatchingSnapshot();
+      });
+    });
+    describe('reduce', () => {
+      testPrintAndParse(
+        'reduce .[] as $item (\n  0;\n  . + $item\n)',
+        'reduce .[] as $item (0; .+$item)',
+        {
           expr: {
             expr: { expr: { type: 'identity' }, type: 'iterator' },
             init: { type: 'num', value: 0 },
@@ -836,13 +875,15 @@ describe('parse', () => {
             var: '$item',
           },
           type: 'root',
-        })
+        }
       );
     });
     describe('foreach', () => {
-      it('2 args', () => {
-        expect(parse('foreach .[] as $item (0; .+$item)')).toEqual(
-          progAst({
+      describe('2 args', () => {
+        testPrintAndParse(
+          'foreach .[] as $item (\n  0;\n  . + $item\n)',
+          'foreach .[] as $item (0; .+$item)',
+          {
             expr: {
               expr: { expr: { type: 'identity' }, type: 'iterator' },
               init: { type: 'num', value: 0 },
@@ -856,12 +897,14 @@ describe('parse', () => {
               var: '$item',
             },
             type: 'root',
-          })
+          }
         );
       });
-      it('3 args', () => {
-        expect(parse('foreach .[] as $item (0; .+$item; .+1)')).toEqual(
-          progAst({
+      describe('3 args', () => {
+        testPrintAndParse(
+          'foreach .[] as $item (\n  0;\n  . + $item;\n  . + 1\n)',
+          'foreach .[] as $item (0; .+$item; .+1)',
+          {
             expr: {
               expr: { expr: { type: 'identity' }, type: 'iterator' },
               extract: {
@@ -881,7 +924,7 @@ describe('parse', () => {
               var: '$item',
             },
             type: 'root',
-          })
+          }
         );
       });
 
@@ -900,25 +943,40 @@ describe('parse', () => {
   });
 
   describe('variables', () => {
-    it('var', () => {
-      expect(parse('$var')).toEqual(
-        progAst({
-          expr: { name: '$var', type: 'var' },
-          type: 'root',
-        })
-      );
+    describe('var', () => {
+      testPrintAndParse('$var', {
+        expr: { name: '$var', type: 'var' },
+        type: 'root',
+      });
     });
-    it('simple declaration', () => {
-      expect(parse('. as $var | $var')).toEqual(
-        progAst({
+    describe('simple declaration', () => {
+      testPrintAndParse('. as $var | $var', {
+        expr: {
+          next: { name: '$var', type: 'var' },
+          destructuring: [{ type: 'var', name: '$var' }],
+          expr: { type: 'identity' },
+          type: 'varDeclaration',
+        },
+        type: 'root',
+      });
+    });
+    describe('control structure', () => {
+      testPrintAndParse(
+        '(if true\n  then true\n  else false\nend) as $var | .',
+        {
           expr: {
-            next: { name: '$var', type: 'var' },
-            destructuring: { type: 'var', name: '$var' },
-            expr: { type: 'identity' },
+            destructuring: [{ name: '$var', type: 'var' }],
+            expr: {
+              cond: { type: 'bool', value: true },
+              else: { type: 'bool', value: false },
+              then: { type: 'bool', value: true },
+              type: 'if',
+            },
+            next: { type: 'identity' },
             type: 'varDeclaration',
           },
           type: 'root',
-        })
+        }
       );
     });
     it('expect pipe', () => {
@@ -929,20 +987,115 @@ describe('parse', () => {
         parse('if true then true else false end as $var | .')
       ).toThrowErrorMatchingSnapshot();
     });
-    describe('precedence', () => {
-      it('times', () => {
-        expect(parse('.*1 as $var|.')).toEqual(parse('.*(1 as $var|.)'));
+
+    describe('scopes', () => {
+      describe('override', () => {
+        testPrintAndParse('1 as $var | 2 as $var | $var', {
+          expr: {
+            destructuring: [{ name: '$var', type: 'var' }],
+            expr: { type: 'num', value: 1 },
+            next: {
+              destructuring: [{ name: '$var', type: 'var' }],
+              expr: { type: 'num', value: 2 },
+              next: { name: '$var', type: 'var' },
+              type: 'varDeclaration',
+            },
+            type: 'varDeclaration',
+          },
+          type: 'root',
+        });
       });
-      it('pipe', () => {
-        expect(parse('.|1 as $var|.')).toEqual(parse('.|(1 as $var|.)'));
+      describe('exit scope', () => {
+        testPrintAndParse('1 as $var | (2 as $var | $var) | $var', {
+          expr: {
+            destructuring: [{ name: '$var', type: 'var' }],
+            expr: { type: 'num', value: 1 },
+            next: {
+              left: {
+                destructuring: [{ name: '$var', type: 'var' }],
+                expr: { type: 'num', value: 2 },
+                next: { name: '$var', type: 'var' },
+                type: 'varDeclaration',
+              },
+              operator: '|',
+              right: { name: '$var', type: 'var' },
+              type: 'binary',
+            },
+            type: 'varDeclaration',
+          },
+          type: 'root',
+        });
       });
-      it('minus', () => {
-        expect(parse('-1 as $var|.')).toEqual(parse('-(1 as $var|.)'));
+      describe('pipe in inner scope', () => {
+        testPrintAndParse('1 as $var | 2 as $var | $var | $var', {
+          expr: {
+            destructuring: [{ name: '$var', type: 'var' }],
+            expr: { type: 'num', value: 1 },
+            next: {
+              destructuring: [{ name: '$var', type: 'var' }],
+              expr: { type: 'num', value: 2 },
+              next: {
+                left: { name: '$var', type: 'var' },
+                operator: '|',
+                right: { name: '$var', type: 'var' },
+                type: 'binary',
+              },
+              type: 'varDeclaration',
+            },
+            type: 'varDeclaration',
+          },
+          type: 'root',
+        });
       });
     });
-    it('array destructuring', () => {
-      expect(parse('[1,2,3] as [$a, $b, $c] | $a+$b+$c')).toEqual(
-        progAst({
+    describe('precedence', () => {
+      describe('around declaration', () => {
+        testPrintAndParse('. * (1 as $var | .)', {
+          expr: {
+            left: { type: 'identity' },
+            operator: '*',
+            right: {
+              destructuring: [{ name: '$var', type: 'var' }],
+              expr: { type: 'num', value: 1 },
+              next: { type: 'identity' },
+              type: 'varDeclaration',
+            },
+            type: 'binary',
+          },
+          type: 'root',
+        });
+      });
+      describe('around value', () => {
+        testPrintAndParse('(. * 1) as $var | .', {
+          expr: {
+            destructuring: [{ name: '$var', type: 'var' }],
+            expr: {
+              left: { type: 'identity' },
+              operator: '*',
+              right: { type: 'num', value: 1 },
+              type: 'binary',
+            },
+            next: { type: 'identity' },
+            type: 'varDeclaration',
+          },
+          type: 'root',
+        });
+      });
+      it('times', () => {
+        expectParse('.*1 as $var|.', '.*(1 as $var|.)');
+      });
+      it('pipe', () => {
+        expectParse('.|1 as $var|.', '.|(1 as $var|.)');
+      });
+      it('minus', () => {
+        expectParse('-1 as $var|.', '-(1 as $var|.)');
+      });
+    });
+    describe('array destructuring', () => {
+      testPrintAndParse(
+        '[1, 2, 3] as [ $a, $b, $c ] | $a + $b + $c',
+        '[1,2,3] as [$a, $b, $c] | $a+$b+$c',
+        {
           expr: {
             next: {
               left: {
@@ -955,14 +1108,16 @@ describe('parse', () => {
               right: { name: '$c', type: 'var' },
               type: 'binary',
             },
-            destructuring: {
-              destructuring: [
-                { name: '$a', type: 'var' },
-                { name: '$b', type: 'var' },
-                { name: '$c', type: 'var' },
-              ],
-              type: 'arrayDestructuring',
-            },
+            destructuring: [
+              {
+                destructuring: [
+                  { name: '$a', type: 'var' },
+                  { name: '$b', type: 'var' },
+                  { name: '$c', type: 'var' },
+                ],
+                type: 'arrayDestructuring',
+              },
+            ],
             expr: {
               expr: {
                 left: {
@@ -980,16 +1135,16 @@ describe('parse', () => {
             type: 'varDeclaration',
           },
           type: 'root',
-        })
+        }
       );
     });
     describe('object destructuring', () => {
-      it('str', () => {
-        expect(parse('. as {"key": $a} | $a')).toEqual(
-          progAst({
-            expr: {
-              next: { name: '$a', type: 'var' },
-              destructuring: {
+      describe('str', () => {
+        testPrintAndParse('. as { "key": $a } | $a', '. as {"key": $a} | $a', {
+          expr: {
+            next: { name: '$a', type: 'var' },
+            destructuring: [
+              {
                 entries: [
                   {
                     destructuring: { name: '$a', type: 'var' },
@@ -998,207 +1153,286 @@ describe('parse', () => {
                 ],
                 type: 'objectDestructuring',
               },
-              expr: { type: 'identity' },
-              type: 'varDeclaration',
-            },
-            type: 'root',
-          })
-        );
+            ],
+            expr: { type: 'identity' },
+            type: 'varDeclaration',
+          },
+          type: 'root',
+        });
       });
-      it('ident', () => {
-        expect(parse('. as {key: $a} | $a')).toEqual(
-          progAst({
-            expr: {
-              next: { name: '$a', type: 'var' },
-              destructuring: {
+      describe('ident', () => {
+        testPrintAndParse('. as { key: $a } | $a', '. as {key: $a} | $a', {
+          expr: {
+            next: { name: '$a', type: 'var' },
+            destructuring: [
+              {
                 entries: [
                   { destructuring: { name: '$a', type: 'var' }, key: 'key' },
                 ],
                 type: 'objectDestructuring',
               },
-              expr: { type: 'identity' },
-              type: 'varDeclaration',
-            },
-            type: 'root',
-          })
-        );
-      });
-      it('expression', () => {
-        expect(parse('. as {(1+2 | tostring): $a} | $a')).toEqual(
-          progAst({
-            expr: {
-              next: { name: '$a', type: 'var' },
-              destructuring: {
-                entries: [
-                  {
-                    destructuring: { name: '$a', type: 'var' },
-                    key: {
-                      left: {
-                        left: { type: 'num', value: 1 },
-                        operator: '+',
-                        right: { type: 'num', value: 2 },
-                        type: 'binary',
-                      },
-                      operator: '|',
-                      right: { args: [], name: 'tostring', type: 'filter' },
-                      type: 'binary',
-                    },
-                  },
-                ],
-                type: 'objectDestructuring',
-              },
-              expr: { type: 'identity' },
-              type: 'varDeclaration',
-            },
-            type: 'root',
-          })
-        );
-      });
-      it('abbreviated', () => {
-        expect(parse('. as {$a} | $a')).toEqual(
-          progAst({
-            expr: {
-              next: { name: '$a', type: 'var' },
-              destructuring: {
-                entries: [{ key: { name: '$a', type: 'var' } }],
-                type: 'objectDestructuring',
-              },
-              expr: { type: 'identity' },
-              type: 'varDeclaration',
-            },
-            type: 'root',
-          })
-        );
-      });
-      it('str interpolation', () => {
-        expect(parse('. as {"\\(1)": $a} | $a')).toEqual(
-          progAst({
-            expr: {
-              next: { name: '$a', type: 'var' },
-              destructuring: {
-                entries: [
-                  {
-                    destructuring: { name: '$a', type: 'var' },
-                    key: {
-                      interpolated: true,
-                      parts: [{ type: 'num', value: 1 }],
-                      type: 'str',
-                    },
-                  },
-                ],
-                type: 'objectDestructuring',
-              },
-              expr: { type: 'identity' },
-              type: 'varDeclaration',
-            },
-            type: 'root',
-          })
-        );
-      });
-    });
-    it('nested', () => {
-      expect(
-        parse(
-          '. as {a: {$a, arr: [$b, $c, {$d, "key": $e, "arr": [$f, $g]}]}} | $a'
-        )
-      ).toEqual(
-        progAst({
-          expr: {
-            next: { name: '$a', type: 'var' },
-            destructuring: {
-              entries: [
-                {
-                  destructuring: {
-                    entries: [
-                      { key: { name: '$a', type: 'var' } },
-                      {
-                        destructuring: {
-                          destructuring: [
-                            { name: '$b', type: 'var' },
-                            { name: '$c', type: 'var' },
-                            {
-                              entries: [
-                                { key: { name: '$d', type: 'var' } },
-                                {
-                                  destructuring: { name: '$e', type: 'var' },
-                                  key: {
-                                    interpolated: false,
-                                    type: 'str',
-                                    value: 'key',
-                                  },
-                                },
-                                {
-                                  destructuring: {
-                                    destructuring: [
-                                      { name: '$f', type: 'var' },
-                                      { name: '$g', type: 'var' },
-                                    ],
-                                    type: 'arrayDestructuring',
-                                  },
-                                  key: {
-                                    interpolated: false,
-                                    type: 'str',
-                                    value: 'arr',
-                                  },
-                                },
-                              ],
-                              type: 'objectDestructuring',
-                            },
-                          ],
-                          type: 'arrayDestructuring',
-                        },
-                        key: 'arr',
-                      },
-                    ],
-                    type: 'objectDestructuring',
-                  },
-                  key: 'a',
-                },
-              ],
-              type: 'objectDestructuring',
-            },
+            ],
             expr: { type: 'identity' },
             type: 'varDeclaration',
           },
           type: 'root',
-        })
-      );
-    });
-    it('binary right', () => {
-      expect(parse('. | (. as $var | $var)')).toEqual(
-        progAst({
-          expr: {
-            left: { type: 'identity' },
-            operator: '|',
-            right: {
-              destructuring: { name: '$var', type: 'var' },
+        });
+      });
+      describe('expression', () => {
+        testPrintAndParse(
+          '. as { (1 + 2 | tostring): $a } | $a',
+          '. as {(1+2 | tostring): $a} | $a',
+          {
+            expr: {
+              next: { name: '$a', type: 'var' },
+              destructuring: [
+                {
+                  entries: [
+                    {
+                      destructuring: { name: '$a', type: 'var' },
+                      key: {
+                        left: {
+                          left: { type: 'num', value: 1 },
+                          operator: '+',
+                          right: { type: 'num', value: 2 },
+                          type: 'binary',
+                        },
+                        operator: '|',
+                        right: { args: [], name: 'tostring/0', type: 'filter' },
+                        type: 'binary',
+                      },
+                    },
+                  ],
+                  type: 'objectDestructuring',
+                },
+              ],
               expr: { type: 'identity' },
-              next: { name: '$var', type: 'var' },
               type: 'varDeclaration',
             },
-            type: 'binary',
+            type: 'root',
+          }
+        );
+      });
+      describe('abbreviated', () => {
+        testPrintAndParse('. as { $a } | $a', '. as {$a} | $a', {
+          expr: {
+            next: { name: '$a', type: 'var' },
+            destructuring: [
+              {
+                entries: [{ key: { name: '$a', type: 'var' } }],
+                type: 'objectDestructuring',
+              },
+            ],
+            expr: { type: 'identity' },
+            type: 'varDeclaration',
           },
           type: 'root',
-        })
-      );
-    });
-    it('binary left', () => {
-      expect(parse('(. as $var | $var) | .')).toEqual(
-        progAst({
-          expr: {
-            left: {
-              destructuring: { name: '$var', type: 'var' },
+        });
+      });
+      describe('str interpolation', () => {
+        testPrintAndParse(
+          '. as { "\\(1)": $a } | $a',
+          '. as {"\\(1)": $a} | $a',
+          {
+            expr: {
+              next: { name: '$a', type: 'var' },
+              destructuring: [
+                {
+                  entries: [
+                    {
+                      destructuring: { name: '$a', type: 'var' },
+                      key: {
+                        interpolated: true,
+                        parts: [{ type: 'num', value: 1 }],
+                        type: 'str',
+                      },
+                    },
+                  ],
+                  type: 'objectDestructuring',
+                },
+              ],
               expr: { type: 'identity' },
-              next: { name: '$var', type: 'var' },
               type: 'varDeclaration',
             },
-            operator: '|',
-            right: { type: 'identity' },
-            type: 'binary',
+            type: 'root',
+          }
+        );
+      });
+    });
+    describe('nested', () => {
+      testPrintAndParse(
+        '. as { a: { $a, arr: [ $b, $c, { $d, "key": $e, "arr": [ $f, $g ] } ] } } | $a',
+        '. as {a: {$a, arr: [$b, $c, {$d, "key": $e, "arr": [$f, $g]}]}} | $a',
+        {
+          expr: {
+            next: { name: '$a', type: 'var' },
+            destructuring: [
+              {
+                entries: [
+                  {
+                    destructuring: {
+                      entries: [
+                        { key: { name: '$a', type: 'var' } },
+                        {
+                          destructuring: {
+                            destructuring: [
+                              { name: '$b', type: 'var' },
+                              { name: '$c', type: 'var' },
+                              {
+                                entries: [
+                                  { key: { name: '$d', type: 'var' } },
+                                  {
+                                    destructuring: { name: '$e', type: 'var' },
+                                    key: {
+                                      interpolated: false,
+                                      type: 'str',
+                                      value: 'key',
+                                    },
+                                  },
+                                  {
+                                    destructuring: {
+                                      destructuring: [
+                                        { name: '$f', type: 'var' },
+                                        { name: '$g', type: 'var' },
+                                      ],
+                                      type: 'arrayDestructuring',
+                                    },
+                                    key: {
+                                      interpolated: false,
+                                      type: 'str',
+                                      value: 'arr',
+                                    },
+                                  },
+                                ],
+                                type: 'objectDestructuring',
+                              },
+                            ],
+                            type: 'arrayDestructuring',
+                          },
+                          key: 'arr',
+                        },
+                      ],
+                      type: 'objectDestructuring',
+                    },
+                    key: 'a',
+                  },
+                ],
+                type: 'objectDestructuring',
+              },
+            ],
+            expr: { type: 'identity' },
+            type: 'varDeclaration',
           },
           type: 'root',
-        })
+        }
+      );
+    });
+    describe('binary right', () => {
+      testPrintAndParse('. | (. as $var | $var)', {
+        expr: {
+          left: { type: 'identity' },
+          operator: '|',
+          right: {
+            destructuring: [{ name: '$var', type: 'var' }],
+            expr: { type: 'identity' },
+            next: { name: '$var', type: 'var' },
+            type: 'varDeclaration',
+          },
+          type: 'binary',
+        },
+        type: 'root',
+      });
+    });
+    describe('binary left', () => {
+      testPrintAndParse('(. as $var | $var) | .', {
+        expr: {
+          left: {
+            destructuring: [{ name: '$var', type: 'var' }],
+            expr: { type: 'identity' },
+            next: { name: '$var', type: 'var' },
+            type: 'varDeclaration',
+          },
+          operator: '|',
+          right: { type: 'identity' },
+          type: 'binary',
+        },
+        type: 'root',
+      });
+    });
+    describe('destructuring alternative operator', () => {
+      testPrintAndParse(
+        '. as { $a } ?// [ $a ] ?// $a | $a',
+        '. as {$a} ?// [$a] ?// $a | $a',
+        {
+          expr: {
+            destructuring: [
+              {
+                entries: [{ key: { name: '$a', type: 'var' } }],
+                type: 'objectDestructuring',
+              },
+              {
+                destructuring: [{ name: '$a', type: 'var' }],
+                type: 'arrayDestructuring',
+              },
+              { name: '$a', type: 'var' },
+            ],
+            expr: { type: 'identity' },
+            next: { name: '$a', type: 'var' },
+            type: 'varDeclaration',
+          },
+          type: 'root',
+        }
       );
     });
   });
 });
+
+function progAst(ast: ProgAst) {
+  return ast;
+}
+
+function expectPrint(code: string, ast?: ProgAst) {
+  if (ast) {
+    expect(print(progAst(ast))).toEqual(code);
+  } else {
+    expect(parse(print(parse(code)))).toEqual(parse(code));
+  }
+}
+
+function expectParse(code: string, ast: ProgAst): void;
+function expectParse(code1: string, code2: string): void;
+function expectParse(a: string, b: ProgAst | string): void {
+  expect(parse(a)).toEqual(typeof b === 'string' ? parse(b) : progAst(b));
+}
+
+function testPrintAndParse(formatted: string, code: string, ast: ProgAst): void;
+function testPrintAndParse(formatted: string, ast: ProgAst): void;
+function testPrintAndParse(
+  formatted: string,
+  b: string | ProgAst,
+  c?: ProgAst
+): void {
+  let ast: ProgAst;
+  if (typeof b === 'string') {
+    const unformatted = b;
+    if (c === undefined) throw new Error('testPrintAndParse: ast is undefined');
+    ast = c;
+    describe('parse', () => {
+      it('formatted', () => {
+        expectParse(formatted, ast);
+      });
+      it('unformatted', () => {
+        expectParse(unformatted, ast);
+      });
+    });
+  } else {
+    ast = b;
+    it('parse', () => {
+      expectParse(formatted, ast);
+    });
+  }
+
+  it('print', () => {
+    expectPrint(formatted, ast);
+  });
+}

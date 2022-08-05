@@ -4,38 +4,47 @@ export interface PuncToken {
   type: 'punc';
   value: string;
 }
+
 export interface OpToken {
   type: 'op';
   value: string;
 }
+
 export interface IdentToken {
   type: 'ident';
   value: string;
 }
+
 export interface KwToken {
   type: 'kw';
   value: string;
 }
+
 export interface FormatToken {
   type: 'format';
   value: string;
 }
+
 export interface VarToken {
   type: 'var';
   value: string;
 }
+
 export interface StrToken {
   type: 'str';
   value: string;
 }
+
 export interface NullToken {
   type: 'null';
   value: null;
 }
+
 export interface BoolToken {
   type: 'bool';
   value: boolean;
 }
+
 export interface NumToken {
   type: 'num';
   value: number;
@@ -364,6 +373,7 @@ export class Tokenizer {
   static stringifyTokenType(tokenType: TokenType) {
     return this.tokenTypeToString[tokenType];
   }
+
   static stringifyToken(token: Token | null): string {
     if (token === null) return 'EOF';
     if (['null', 'bool', 'value'].includes(token.type)) {

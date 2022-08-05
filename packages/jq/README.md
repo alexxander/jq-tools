@@ -1,7 +1,6 @@
 # @jq-tools/jq
 
 This library intends to implement a fully functional jq interpreter that could be used in the browser or in Node.js.
-As of now, only the parser is available, but I hope to add a formatter and an interpreter soon.
 
 For more info about the jq language see its official [homepage](https://stedolan.github.io/jq/).
 
@@ -15,28 +14,70 @@ yarn add -E @jq-tools/jq
 
 ### Interpreter
 
-NOTE: This feature is not implemented yet.
+From code, you can either use the `jq` template tag or the `evaluate` method. It is also possible to use the interpreter
+from the command line.
 
-#### Input
+#### Supported features
 
-```js
+The interpreter should currently support many of jq's features. However, not everything is supported yet. The following
+features still lack an implementation:
+
+- Modules
+- Assignment operators `=`, `|=`, `+=`, `-=`, `*=`, `/=`, `%=`, `//=`.
+- Multiplication of objects (e.g. `{a: 1} * {b: 2}`)
+- Most of the builtins (except for `length`)
+- Most of the formats (except for `@base64` and `@base64d`)
+
+#### `jq` template tag (`jq<In=any, Out=unknown>`)
+
+Parses the jq code from the template string and returns a function of shape
+`(input: In[] | IterableIterator<In>) => IterableIterator<Out>`. This function can be used to apply the defined jq
+filter to some input data.
+
+```ts
 import { jq } from '@jq-tools/jq';
 
-const transform = jq`.[] | . * 2`;
+const transform = jq<number, number>`.[] | . * 2`;
 Array.from(transform([1, 2, 3]));
 ```
 
-#### Output
+##### Output
 
 ```json
 [2, 4, 6]
 ```
 
+#### `evaluate(ast: ProgAst, input: any[] | IterableIterator<any>): IterableIterator<any>`
+
+Evaluates the given jq AST against the provided input.
+
+```ts
+import { evaluate, parse } from '@jq-tools/jq';
+
+Array.from(evaluate(parse(`.[] | . * 2`), [1, 2, 3]));
+```
+
+##### Output
+
+```json
+[2, 4, 6]
+```
+
+#### CLI
+
+You can use the jq interpreter from the command line:
+
+```bash
+echo '5' | yarn jq '.+5' # Outputs: 10
+```
+
 ### Formatter
 
-#### Input
+#### `format(code: string): string`
 
-```js
+Formats the provided jq code
+
+```ts
 import { format } from '@jq-tools/jq';
 
 format(`[.[] | {
@@ -46,7 +87,7 @@ lastName: .surname
 `);
 ```
 
-#### Output
+##### Output
 
 ```jq
 [.[] | {
@@ -57,9 +98,11 @@ lastName: .surname
 
 ### Code Generator
 
-#### Input
+#### `print(ast: ProgAst): string`
 
-```js
+Generates code from the provided jq AST.
+
+```ts
 import { print } from '@jq-tools/jq';
 
 print({
@@ -68,7 +111,7 @@ print({
 });
 ```
 
-#### Output
+##### Output
 
 ```jq
 .[]
@@ -78,45 +121,44 @@ print({
 
 The parser should be able to handle any jq syntax except for the modules.
 
-For more information about the AST refer to its [TypeScript types](https://github.com/alexxander/jq-tools/blob/main/packages/jq/src/lib/parser/AST.ts).
+For more information about the AST refer to
+its [TypeScript types](https://github.com/alexxander/jq-tools/blob/main/packages/jq/src/lib/parser/AST.ts).
 
-#### Input
+#### `parse(code: string): ProgAst`
 
-```js
+Parses the provided jq code and returns its AST.
+
+```ts
 import { parse } from '@jq-tools/jq';
 
 parse('.[].a | {"a": 5 + ., "--\\(. * 2)--": . + 4}');
 ```
 
-#### Output
+##### Output
 
 ```json
 {
-  "type": "root",
   "expr": {
-    "type": "binary",
     "left": {
-      "type": "index",
       "expr": {
-        "type": "iterator",
         "expr": {
           "type": "identity"
-        }
+        },
+        "type": "iterator"
       },
-      "index": "a"
+      "index": "a",
+      "type": "index"
     },
     "operator": "|",
     "right": {
-      "type": "object",
       "entries": [
         {
           "key": {
+            "interpolated": false,
             "type": "str",
-            "value": "a",
-            "interpolated": false
+            "value": "a"
           },
           "value": {
-            "type": "binary",
             "left": {
               "type": "num",
               "value": 5
@@ -124,7 +166,8 @@ parse('.[].a | {"a": 5 + ., "--\\(. * 2)--": . + 4}');
             "operator": "+",
             "right": {
               "type": "identity"
-            }
+            },
+            "type": "binary"
           }
         },
         {
@@ -133,7 +176,6 @@ parse('.[].a | {"a": 5 + ., "--\\(. * 2)--": . + 4}');
             "parts": [
               "--",
               {
-                "type": "binary",
                 "left": {
                   "type": "identity"
                 },
@@ -141,14 +183,14 @@ parse('.[].a | {"a": 5 + ., "--\\(. * 2)--": . + 4}');
                 "right": {
                   "type": "num",
                   "value": 2
-                }
+                },
+                "type": "binary"
               },
               "--"
             ],
             "type": "str"
           },
           "value": {
-            "type": "binary",
             "left": {
               "type": "identity"
             },
@@ -156,12 +198,16 @@ parse('.[].a | {"a": 5 + ., "--\\(. * 2)--": . + 4}');
             "right": {
               "type": "num",
               "value": 4
-            }
+            },
+            "type": "binary"
           }
         }
-      ]
-    }
-  }
+      ],
+      "type": "object"
+    },
+    "type": "binary"
+  },
+  "type": "root"
 }
 ```
 

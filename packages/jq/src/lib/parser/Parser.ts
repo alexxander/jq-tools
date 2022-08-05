@@ -4,6 +4,7 @@ import {
   ArrayAst,
   ArrayDestructuringAst,
   BinaryAst,
+  BinaryOperator,
   BreakAst,
   DefAst,
   DestructuringAst,
@@ -25,6 +26,7 @@ import {
   SliceAst,
   StrAst,
   TryAst,
+  UnaryOperator,
   VarAst,
   VarDeclarationAst,
 } from './AST';
@@ -86,6 +88,16 @@ export class Parser {
     }
 
     return ast;
+  }
+
+  static getFilterName(ident: string, arity: number) {
+    return `${ident}/${arity}`;
+  }
+  static getFilterIdent(filterName: string): string {
+    return filterName.split('/')[0];
+  }
+  static getFilterArity(filterName: string): number {
+    return Number(filterName.split('/')[1]);
   }
 
   constructor(private input: Tokenizer) {}
@@ -230,20 +242,26 @@ export class Parser {
 
   private parseDef(): DefAst {
     this.skipKw('def');
-    const name = this.skipIdent().value;
+    const nameIdent = this.skipIdent().value;
     const args = this.isPunc('(')
       ? this.delimited('(', ')', ';', () => this.parseArgName())
       : [];
+    const name = Parser.getFilterName(nameIdent, args.length);
     this.skipPunc(':');
     const body = this.parseExpression();
     this.skipPunc(';');
-    return {
+    let out: DefAst = {
       type: 'def',
       name,
       args,
       body,
-      next: this.parseExpression(),
     };
+
+    if (!this.input.eof()) {
+      out.next = this.parseExpression();
+    }
+
+    return out;
   }
 
   private delimited<T>(
@@ -297,7 +315,10 @@ export class Parser {
     const token = this.input.next();
     switch (token?.type) {
       case 'ident':
-        return { type: 'filterArg', name: token.value };
+        return {
+          type: 'filterArg',
+          name: Parser.getFilterName(token.value, 0),
+        };
       case 'var':
         return { type: 'varArg', name: token.value };
     }
@@ -341,7 +362,7 @@ export class Parser {
     if (this.isOp('-'))
       return {
         type: 'unary',
-        operator: this.skipOp('-').value,
+        operator: this.skipOp('-').value as UnaryOperator,
         expr: this.parseAtomOrControlStructure(),
       };
 
@@ -386,7 +407,7 @@ export class Parser {
         return this.maybeBinary(
           Parser.normalizeBinaryAst({
             type: 'binary',
-            operator: op.value,
+            operator: op.value as BinaryOperator,
             left,
             right: this.maybeBinary(
               this.parseAtomOrControlStructure(),
@@ -422,7 +443,11 @@ export class Parser {
     const expr = cb();
     if (this.isKw('as')) {
       this.skipKw('as');
-      const destructuring = this.parseDestructuring();
+      const destructuring = [this.parseDestructuring()];
+      while (this.isOp('?//')) {
+        this.skipOp('?//');
+        destructuring.push(this.parseDestructuring());
+      }
       this.skipOp('|');
       const child = this.parseExpression();
       const varDeclaration: VarDeclarationAst = {
@@ -522,26 +547,27 @@ export class Parser {
   }
 
   parseFilter(): FilterAst {
-    const name = this.isKw('not')
+    const nameIdent = this.isKw('not')
       ? this.skipKw().value
       : this.skipIdent().value;
     const args = this.isPunc('(')
       ? this.delimited('(', ')', ';', () => this.parseExpression())
       : [];
+    const name = Parser.getFilterName(nameIdent, args.length);
     return { type: 'filter', name, args };
   }
 
-  parseFormat(): FormatAst {
+  parseFormat(): FormatAst | StrAst {
     const format = this.skipFormat();
+    const ast: FormatAst = {
+      type: 'format',
+      name: format.value,
+    };
+
     if (this.isStr()) {
-      const str = this.parseStr();
-      return {
-        type: 'format',
-        name: format.value,
-        str,
-      };
+      return this.parseStr(ast);
     }
-    return { type: 'format', name: format.value };
+    return ast;
   }
 
   parseArray(): ArrayAst {
@@ -594,9 +620,10 @@ export class Parser {
     return { key, value };
   }
 
-  parseStr(): StrAst {
+  parseStr(format?: FormatAst): StrAst {
     const start = this.skipStr();
 
+    let out: StrAst;
     if (this.isPunc('\\(')) {
       const parts: (string | ExpressionAst)[] = [start.value];
       while (this.isPunc('\\(')) {
@@ -604,18 +631,22 @@ export class Parser {
         parts.push(this.skipStr().value);
       }
 
-      return {
+      out = {
         type: 'str',
         interpolated: true,
         parts: parts.filter((x) => x !== ''),
       };
+    } else {
+      out = {
+        type: 'str',
+        interpolated: false,
+        value: start.value,
+      };
     }
 
-    return {
-      type: 'str',
-      interpolated: false,
-      value: start.value,
-    };
+    if (format) out.format = format;
+
+    return out;
   }
 
   parseInterpolation() {
@@ -668,7 +699,10 @@ export class Parser {
 
   parseLabel(): LabelAst {
     this.skipKw('label');
-    return { type: 'label', value: this.skipVar().value };
+    const value = this.skipVar().value;
+    this.skipOp('|');
+    const next = this.parseExpression();
+    return { type: 'label', value, next };
   }
 
   parseBreak(): BreakAst {

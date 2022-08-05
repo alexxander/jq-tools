@@ -50,7 +50,7 @@ class Print {
     return this.expression(ast.expr, false);
   }
   def(ast: DefAst) {
-    return `def ${ast.name}${
+    return `def ${Parser.getFilterIdent(ast.name)}${
       ast.args.length > 0
         ? this.delimited(
             '(',
@@ -61,13 +61,12 @@ class Print {
             false
           )
         : ''
-    }: ${this.expression(ast.body, false)}; ${this.expression(
-      ast.next,
-      false
-    )}`;
+    }: ${this.expression(ast.body, false)};${
+      ast.next ? ' ' + this.expression(ast.next, false) : ''
+    }`;
   }
   filterArg(ast: FilterArgAst) {
-    return ast.name;
+    return Parser.getFilterIdent(ast.name);
   }
   varArg(ast: VarArgAst) {
     return ast.name;
@@ -79,8 +78,10 @@ class Print {
     return JSON.stringify(ast.value);
   }
   str(ast: StrAst): string {
+    const formatStr = ast.format ? this.format(ast.format) + ' ' : '';
     if (ast.interpolated) {
       return (
+        formatStr +
         '"' +
         ast.parts
           .map((item) => {
@@ -95,7 +96,7 @@ class Print {
         '"'
       );
     } else {
-      return JSON.stringify(ast.value);
+      return formatStr + JSON.stringify(ast.value);
     }
   }
   bool(ast: BoolAst) {
@@ -105,14 +106,10 @@ class Print {
     return JSON.stringify(ast.value);
   }
   format(ast: FormatAst) {
-    if (ast.str !== undefined) {
-      return `${ast.name} ${this.str(ast.str)}`;
-    } else {
-      return ast.name;
-    }
+    return ast.name;
   }
   filter(ast: FilterAst) {
-    return `${ast.name}${
+    return `${Parser.getFilterIdent(ast.name)}${
       ast.args.length > 0
         ? this.delimited('(', ')', ';', ast.args, (item) =>
             this.expression(item, false)
@@ -145,7 +142,7 @@ class Print {
     }
   }
   label(ast: LabelAst) {
-    return `label ${ast.value}`;
+    return `label ${ast.value} | ${this.expression(ast.next, false)}`;
   }
   break(ast: BreakAst) {
     return `break ${ast.value}`;
@@ -226,10 +223,9 @@ class Print {
     return `${this.expression(
       ast.expr,
       this.varDeclarationNeedsBrackets(ast.expr)
-    )} as ${this.destructuring(ast.destructuring)} | ${this.expression(
-      ast.next,
-      false
-    )}`;
+    )} as ${ast.destructuring
+      .map((destructuring) => this.destructuring(destructuring))
+      .join(' ?// ')} | ${this.expression(ast.next, false)}`;
   }
   arrayDestructuring(ast: ArrayDestructuringAst): string {
     return this.delimited('[ ', ' ]', ', ', ast.destructuring, (item) =>

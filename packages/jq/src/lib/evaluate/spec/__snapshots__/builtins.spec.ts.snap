@@ -1,0 +1,5 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`builtins native length boolean 1`] = `"boolean has no length"`;
+
+exports[`builtins native length number 1`] = `"number has no length"`;

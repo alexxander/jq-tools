@@ -1,10 +1,20 @@
 {
   "name": "@jq-tools/jq",
   "description": "jq for js",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "type": "commonjs",
   "repository": {
     "type": "git",
     "url": "https://github.com/alexxander/jq-tools.git"
+  },
+  "bin": {
+    "jq": "src/bin/jq.js"
+  },
+  "dependencies": {
+    "lodash": "4.17.21"
+  },
+  "devDependencies": {
+    "@types/lodash": "4.14.182",
+    "@types/node": "18.6.4"
   }
 }

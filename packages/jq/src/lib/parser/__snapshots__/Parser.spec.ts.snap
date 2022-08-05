@@ -14,6 +14,13 @@ foreach .[] as $item (0; .+$item; .+1; .)
 -------------------------------------^"
 `;
 
+exports[`parse control structures label-break expect next 1`] = `
+"Expected operator: \\"|\\", received EOF (1:10)
+
+label $out
+----------^"
+`;
+
 exports[`parse variables atoms only 1`] = `
 "Unexpected keyword: \\"as\\" (1:33)
 

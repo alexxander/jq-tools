@@ -1,0 +1,193 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`evaluate control structures label-break undefined label different label defined 1`] = `"Label $b is not defined"`;
+
+exports[`evaluate control structures label-break undefined label no label defined 1`] = `"Label $out is not defined"`;
+
+exports[`evaluate format undefined format error 1`] = `"'@abc' is not defined"`;
+
+exports[`evaluate index cannot index ""[""] 1`] = `"Cannot index string with string"`;
+
+exports[`evaluate index cannot index ""[[]] 1`] = `"Cannot index string with array"`;
+
+exports[`evaluate index cannot index ""[{}] 1`] = `"Cannot index string with object"`;
+
+exports[`evaluate index cannot index ""[0] 1`] = `"Cannot index string with number"`;
+
+exports[`evaluate index cannot index ""[false] 1`] = `"Cannot index string with boolean"`;
+
+exports[`evaluate index cannot index ""[null] 1`] = `"Cannot index string with null"`;
+
+exports[`evaluate index cannot index [][""] 1`] = `"Cannot index array with string"`;
+
+exports[`evaluate index cannot index [][[]] 1`] = `"Cannot index array with array"`;
+
+exports[`evaluate index cannot index [][{}] 1`] = `"Cannot index array with object"`;
+
+exports[`evaluate index cannot index [][false] 1`] = `"Cannot index array with boolean"`;
+
+exports[`evaluate index cannot index [][null] 1`] = `"Cannot index array with null"`;
+
+exports[`evaluate index cannot index {}[[]] 1`] = `"Cannot index object with array"`;
+
+exports[`evaluate index cannot index {}[{}] 1`] = `"Cannot index object with object"`;
+
+exports[`evaluate index cannot index {}[0] 1`] = `"Cannot index object with number"`;
+
+exports[`evaluate index cannot index {}[false] 1`] = `"Cannot index object with boolean"`;
+
+exports[`evaluate index cannot index {}[null] 1`] = `"Cannot index object with null"`;
+
+exports[`evaluate index cannot index 0[""] 1`] = `"Cannot index number with string"`;
+
+exports[`evaluate index cannot index 0[[]] 1`] = `"Cannot index number with array"`;
+
+exports[`evaluate index cannot index 0[{}] 1`] = `"Cannot index number with object"`;
+
+exports[`evaluate index cannot index 0[0] 1`] = `"Cannot index number with number"`;
+
+exports[`evaluate index cannot index 0[false] 1`] = `"Cannot index number with boolean"`;
+
+exports[`evaluate index cannot index 0[null] 1`] = `"Cannot index number with null"`;
+
+exports[`evaluate index cannot index 1,2,"" | [1,2,3,4,5][.] 1`] = `"Cannot index array with string"`;
+
+exports[`evaluate index cannot index false[""] 1`] = `"Cannot index boolean with string"`;
+
+exports[`evaluate index cannot index false[[]] 1`] = `"Cannot index boolean with array"`;
+
+exports[`evaluate index cannot index false[{}] 1`] = `"Cannot index boolean with object"`;
+
+exports[`evaluate index cannot index false[0] 1`] = `"Cannot index boolean with number"`;
+
+exports[`evaluate index cannot index false[false] 1`] = `"Cannot index boolean with boolean"`;
+
+exports[`evaluate index cannot index false[null] 1`] = `"Cannot index boolean with null"`;
+
+exports[`evaluate index cannot index null[""] 1`] = `"Cannot index null with string"`;
+
+exports[`evaluate index cannot index null[[]] 1`] = `"Cannot index null with array"`;
+
+exports[`evaluate index cannot index null[{}] 1`] = `"Cannot index null with object"`;
+
+exports[`evaluate index cannot index null[0] 1`] = `"Cannot index null with number"`;
+
+exports[`evaluate index cannot index null[false] 1`] = `"Cannot index null with boolean"`;
+
+exports[`evaluate index cannot index null[null] 1`] = `"Cannot index null with null"`;
+
+exports[`evaluate iterator cannot iterate 1`] = `"number \\"5\\" is not iterable"`;
+
+exports[`evaluate operators binary addition incompatible types "a"+[] 1`] = `"Operator + cannot be applied to string and array"`;
+
+exports[`evaluate operators binary addition incompatible types 1+"a" 1`] = `"Operator + cannot be applied to number and string"`;
+
+exports[`evaluate operators binary division 5 / 0 1`] = `"Division by zero"`;
+
+exports[`evaluate operators binary division incompatible types "abc" / 5 1`] = `"Operator / cannot be applied to string and number"`;
+
+exports[`evaluate operators binary division incompatible types [] / 3 1`] = `"Operator / cannot be applied to array and number"`;
+
+exports[`evaluate operators binary division incompatible types 5 / [1,2,3] 1`] = `"Operator / cannot be applied to number and array"`;
+
+exports[`evaluate operators binary modulo 5 % 0 1`] = `"Division by zero"`;
+
+exports[`evaluate operators binary modulo float 5 % 0.2 1`] = `"Division by zero"`;
+
+exports[`evaluate operators binary modulo incompatible types "abc" % 5 1`] = `"Operator % cannot be applied to string and number"`;
+
+exports[`evaluate operators binary modulo incompatible types [] % 3 1`] = `"Operator % cannot be applied to array and number"`;
+
+exports[`evaluate operators binary modulo incompatible types 5 % [1,2,3] 1`] = `"Operator % cannot be applied to number and array"`;
+
+exports[`evaluate operators binary multiplication incompatible types "a" * "b" 1`] = `"Operator * cannot be applied to string and string"`;
+
+exports[`evaluate operators binary multiplication incompatible types [] * "b" 1`] = `"Operator * cannot be applied to array and string"`;
+
+exports[`evaluate operators binary multiplication incompatible types 5 * [1,2,3] 1`] = `"Operator * cannot be applied to number and array"`;
+
+exports[`evaluate operators binary subtraction incompatible types "1"-1 1`] = `"Operator - cannot be applied to string and number"`;
+
+exports[`evaluate operators binary subtraction incompatible types null-"a" 1`] = `"Operator - cannot be applied to null and string"`;
+
+exports[`evaluate slice cannot slice ""["":] 1`] = `"Cannot slice string"`;
+
+exports[`evaluate slice cannot slice ""[[]:] 1`] = `"Cannot slice string"`;
+
+exports[`evaluate slice cannot slice ""[{}:] 1`] = `"Cannot slice string"`;
+
+exports[`evaluate slice cannot slice ""[0:] 1`] = `"Cannot slice string"`;
+
+exports[`evaluate slice cannot slice ""[false:] 1`] = `"Cannot slice string"`;
+
+exports[`evaluate slice cannot slice ""[null:] 1`] = `"Cannot slice string"`;
+
+exports[`evaluate slice cannot slice []["":] 1`] = `"Array slice indices must be numbers"`;
+
+exports[`evaluate slice cannot slice [][:""] 1`] = `"Array slice indices must be numbers"`;
+
+exports[`evaluate slice cannot slice [][:[]] 1`] = `"Array slice indices must be numbers"`;
+
+exports[`evaluate slice cannot slice [][:{}] 1`] = `"Array slice indices must be numbers"`;
+
+exports[`evaluate slice cannot slice [][:false] 1`] = `"Array slice indices must be numbers"`;
+
+exports[`evaluate slice cannot slice [][:null] 1`] = `"Array slice indices must be numbers"`;
+
+exports[`evaluate slice cannot slice [][[]:] 1`] = `"Array slice indices must be numbers"`;
+
+exports[`evaluate slice cannot slice [][{}:] 1`] = `"Array slice indices must be numbers"`;
+
+exports[`evaluate slice cannot slice [][false:] 1`] = `"Array slice indices must be numbers"`;
+
+exports[`evaluate slice cannot slice [][null:] 1`] = `"Array slice indices must be numbers"`;
+
+exports[`evaluate slice cannot slice {}["":] 1`] = `"Cannot slice object"`;
+
+exports[`evaluate slice cannot slice {}[[]:] 1`] = `"Cannot slice object"`;
+
+exports[`evaluate slice cannot slice {}[{}:] 1`] = `"Cannot slice object"`;
+
+exports[`evaluate slice cannot slice {}[0:] 1`] = `"Cannot slice object"`;
+
+exports[`evaluate slice cannot slice {}[false:] 1`] = `"Cannot slice object"`;
+
+exports[`evaluate slice cannot slice {}[null:] 1`] = `"Cannot slice object"`;
+
+exports[`evaluate slice cannot slice 0["":] 1`] = `"Cannot slice number"`;
+
+exports[`evaluate slice cannot slice 0[[]:] 1`] = `"Cannot slice number"`;
+
+exports[`evaluate slice cannot slice 0[{}:] 1`] = `"Cannot slice number"`;
+
+exports[`evaluate slice cannot slice 0[0:] 1`] = `"Cannot slice number"`;
+
+exports[`evaluate slice cannot slice 0[false:] 1`] = `"Cannot slice number"`;
+
+exports[`evaluate slice cannot slice 0[null:] 1`] = `"Cannot slice number"`;
+
+exports[`evaluate slice cannot slice false["":] 1`] = `"Cannot slice boolean"`;
+
+exports[`evaluate slice cannot slice false[[]:] 1`] = `"Cannot slice boolean"`;
+
+exports[`evaluate slice cannot slice false[{}:] 1`] = `"Cannot slice boolean"`;
+
+exports[`evaluate slice cannot slice false[0:] 1`] = `"Cannot slice boolean"`;
+
+exports[`evaluate slice cannot slice false[false:] 1`] = `"Cannot slice boolean"`;
+
+exports[`evaluate slice cannot slice false[null:] 1`] = `"Cannot slice boolean"`;
+
+exports[`evaluate slice cannot slice null["":] 1`] = `"Cannot slice null"`;
+
+exports[`evaluate slice cannot slice null[[]:] 1`] = `"Cannot slice null"`;
+
+exports[`evaluate slice cannot slice null[{}:] 1`] = `"Cannot slice null"`;
+
+exports[`evaluate slice cannot slice null[0:] 1`] = `"Cannot slice null"`;
+
+exports[`evaluate slice cannot slice null[false:] 1`] = `"Cannot slice null"`;
+
+exports[`evaluate slice cannot slice null[null:] 1`] = `"Cannot slice null"`;
+
+exports[`evaluate variables destructuring destructuring alternative operator error 1`] = `"number cannot be destructured as an object"`;

@@ -37,7 +37,7 @@ export interface DefAst {
   name: string;
   args: ArgAst[];
   body: ExpressionAst;
-  next: ExpressionAst;
+  next?: ExpressionAst;
 }
 
 export interface FilterArgAst {
@@ -65,12 +65,14 @@ export interface SimpleStrAst {
   type: 'str';
   interpolated: false;
   value: string;
+  format?: FormatAst;
 }
 
 export interface InterpolatedStrAst {
   type: 'str';
   interpolated: true;
   parts: (string | ExpressionAst)[];
+  format?: FormatAst;
 }
 
 export interface BoolAst {
@@ -86,7 +88,6 @@ export interface NullAst {
 export interface FormatAst {
   type: 'format';
   name: string;
-  str?: StrAst;
 }
 
 export interface FilterAst {
@@ -113,6 +114,7 @@ export interface TryAst {
 export interface LabelAst {
   type: 'label';
   value: string;
+  next: ExpressionAst;
 }
 
 export interface BreakAst {
@@ -137,16 +139,45 @@ export interface ForeachAst {
   extract?: ExpressionAst;
 }
 
+export type BinaryOperator =
+  | '|'
+  | ','
+  | '//'
+  | '='
+  | '|='
+  | '+='
+  | '-='
+  | '*='
+  | '/='
+  | '%='
+  | '//='
+  | 'or'
+  | 'and'
+  | '=='
+  | '!='
+  | '<'
+  | '>'
+  | '<='
+  | '>='
+  | '+'
+  | '-'
+  | '*'
+  | '/'
+  | '%'
+  | '?//';
+
 export interface BinaryAst {
   type: 'binary';
-  operator: string;
+  operator: BinaryOperator;
   left: ExpressionAst;
   right: ExpressionAst;
 }
 
+export type UnaryOperator = '-';
+
 export interface UnaryAst {
   type: 'unary';
-  operator: string;
+  operator: UnaryOperator;
   expr: ExpressionAst;
 }
 
@@ -189,7 +220,7 @@ export interface VarAst {
 export interface VarDeclarationAst {
   type: 'varDeclaration';
   expr: ExpressionAst;
-  destructuring: DestructuringAst;
+  destructuring: DestructuringAst[];
   next: ExpressionAst;
 }
 
