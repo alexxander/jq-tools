@@ -5,8 +5,9 @@ import {
   ForeachAst,
   ProgAst,
 } from '../parser/AST';
-import { combineIterators } from './applyBinary';
+import { combineIterators, evaluateBooleanOperator } from './applyBinary';
 import {
+  access,
   EvaluateInput,
   Input,
   isAtom,
@@ -17,26 +18,27 @@ import {
   single,
   toString,
   Type,
+  typeIsOneOf,
   typeOf,
 } from './utils';
 import { generateObjects } from './generateObjects';
 import { generateCombinations } from './generateCombinations';
 import { JqEvaluateError } from '../errors';
 import { applyFormat } from './applyFormat';
-import { filters } from './filters/filters';
+import { builtinNativeFilters } from './filters/builtinNativeFilters';
 import { Parser } from '../parser/Parser';
-import { isNativeFilter, NativeFilter } from './filters/nativeFilter';
+import { isNativeFilter, NativeFilter } from './filters/lib/nativeFilter';
 import { notDefinedError, notImplementedError } from './evaluateErrors';
+import { builtinJqFilters } from './filters/builtinJqFilters';
+
+interface Var<T = any> {
+  scope: Environment | null;
+  value: T;
+}
 
 function cannotIterateError(value: any) {
   const preview = isAtom(value) ? ` "${value}"` : '';
   return new JqEvaluateError(`${typeOf(value)}${preview} is not iterable`);
-}
-
-function cannotIndexError(val: any, index: any) {
-  return new JqEvaluateError(
-    `Cannot index ${typeOf(val)} with ${typeOf(index)}`
-  );
 }
 
 function cannotSliceError(val: any) {
@@ -59,7 +61,7 @@ export function* evaluate(ast: ProgAst, input: EvaluateInput): Output {
 }
 
 class Environment {
-  private readonly vars: Record<string, any>;
+  private readonly vars: Record<string, Var>;
 
   constructor(private parent: Environment | null = null) {
     this.vars = Object.create(this.parent ? this.parent.vars : null);
@@ -69,14 +71,21 @@ class Environment {
     return new Environment(this);
   }
 
-  get(name: string) {
+  getVar(name: string): Var {
     if (name in this.vars) return this.vars[name];
-    if (name in filters) return filters[name];
+    if (name in builtinJqFilters)
+      return { scope: null, value: builtinJqFilters[name] };
+    if (name in builtinNativeFilters)
+      return { scope: null, value: builtinNativeFilters[name] };
     throw notDefinedError(name);
   }
 
-  set(name: string, value: any) {
-    this.vars[name] = value;
+  setVar(name: string, value: any, scope: Environment = this) {
+    this.vars[name] = { scope, value };
+  }
+
+  getVarValue(name: string) {
+    return this.getVar(name).value;
   }
 
   evaluateConditions(ast: ExpressionAst, input: Input) {
@@ -94,7 +103,7 @@ class Environment {
           : memorizedStepItems;
         for (const stepItem of stepItems) {
           const scope = this.extend();
-          scope.set(ast.var, stepItem);
+          scope.setVar(ast.var, stepItem);
           let empty = true;
           for (const update of scope.evaluate(ast.update, single(res))) {
             empty = false;
@@ -138,6 +147,8 @@ class Environment {
           if (ast.operator === ',') {
             yield* left;
             yield* right;
+          } else if (ast.operator === 'or' || ast.operator === 'and') {
+            yield* evaluateBooleanOperator(ast.operator, left, right);
           } else {
             yield* combineIterators(ast.operator, left, right);
           }
@@ -145,7 +156,7 @@ class Environment {
         break;
       case 'def': {
         const scope = this.extend();
-        scope.set(ast.name, ast);
+        scope.setVar(ast.name, ast);
         yield* scope.evaluate(ast.next, input);
         break;
       }
@@ -184,21 +195,21 @@ class Environment {
       case 'filter':
         for (const item of input) {
           const arity = Parser.getFilterArity(ast.name);
-          const def: DefAst | NativeFilter = this.get(ast.name);
+          const def: Var<DefAst | NativeFilter> = this.getVar(ast.name);
 
-          if (isNativeFilter(def)) {
+          if (isNativeFilter(def.value)) {
             const argSets: any[][] = [];
             for (let i = 0; i < arity; i++) {
               const argExprAst = ast.args[i];
               argSets.push(Array.from(this.evaluate(argExprAst, single(item))));
             }
             for (const combination of generateCombinations(argSets)) {
-              yield def(item, ...combination);
+              yield* def.value(item, ...combination);
             }
           } else {
             const argSets: ([ExpressionAst] | any[])[] = [];
             for (let i = 0; i < arity; i++) {
-              const argDefAst = def.args[i];
+              const argDefAst = def.value.args[i];
               const argExprAst = ast.args[i];
               switch (argDefAst.type) {
                 case 'varArg':
@@ -218,12 +229,12 @@ class Environment {
               }
             }
             for (const combination of generateCombinations(argSets)) {
-              const scope = this.extend();
+              const scope = def.scope?.extend() ?? new Environment();
               for (let i = 0; i < arity; i++) {
-                const argDefAst = def.args[i];
-                scope.set(argDefAst.name, combination[i]);
+                const argDefAst = def.value.args[i];
+                scope.setVar(argDefAst.name, combination[i], this);
               }
-              yield* scope.evaluate(def.body, single(item));
+              yield* scope.evaluate(def.value.body, single(item));
             }
           }
         }
@@ -291,7 +302,7 @@ class Environment {
         break;
       case 'var':
         for (const item of input) {
-          yield this.get(ast.name);
+          yield this.getVarValue(ast.name);
         }
         break;
       case 'varDeclaration':
@@ -306,10 +317,10 @@ class Environment {
                 for (const vars of this.destructureValue(val, destructuring)) {
                   const scope = this.extend();
                   for (const varName of allVarNames) {
-                    scope.set(varName, null);
+                    scope.setVar(varName, null);
                   }
                   for (const [varName, varValue] of Object.entries(vars)) {
-                    scope.set(varName, varValue);
+                    scope.setVar(varName, varValue);
                   }
                   yield* scope.evaluate(ast.next, single(item));
                 }
@@ -356,21 +367,10 @@ class Environment {
         for (const item of input) {
           for (const val of this.evaluate(ast.expr, single(item))) {
             if (typeof ast.index === 'string') {
-              if (typeOf(val) !== Type.object) {
-                throw cannotIndexError(val, ast.index);
-              }
-              yield val[ast.index];
+              yield access(val, ast.index);
             } else {
               for (const index of this.evaluate(ast.index, single(item))) {
-                if (
-                  (typeOf(index) === Type.string &&
-                    typeOf(val) === Type.object) ||
-                  (typeOf(index) === Type.number && typeOf(val) === Type.array)
-                ) {
-                  yield val[index];
-                } else {
-                  throw cannotIndexError(val, index);
-                }
+                yield access(val, index);
               }
             }
           }
@@ -385,7 +385,7 @@ class Environment {
             ? Array.from(this.evaluate(ast.to, single(item)))
             : [undefined];
           for (const val of this.evaluate(ast.expr, single(item))) {
-            if (typeOf(val) !== Type.array) {
+            if (!typeIsOneOf(val, Type.array, Type.string)) {
               throw cannotSliceError(val);
             }
             for (const from of fromItems) {

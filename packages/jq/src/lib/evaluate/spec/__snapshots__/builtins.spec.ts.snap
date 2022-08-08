@@ -1,5 +1,105 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`builtins native length boolean 1`] = `"boolean has no length"`;
+exports[`builtins jq add/0 incompatible types "a"+[] 1`] = `"Operator + cannot be applied to string and array"`;
 
-exports[`builtins native length number 1`] = `"number has no length"`;
+exports[`builtins jq add/0 incompatible types 1+"a" 1`] = `"Operator + cannot be applied to number and string"`;
+
+exports[`builtins jq all/0 error 1`] = `"number \\"0\\" is not iterable"`;
+
+exports[`builtins jq all/1 error 1`] = `"number \\"0\\" is not iterable"`;
+
+exports[`builtins jq any/0 error 1`] = `"number \\"0\\" is not iterable"`;
+
+exports[`builtins jq any/1 error 1`] = `"number \\"0\\" is not iterable"`;
+
+exports[`builtins jq first/0 error 1`] = `"Cannot index string with number"`;
+
+exports[`builtins jq first/0 error 2`] = `"Cannot index object with number"`;
+
+exports[`builtins jq from_entries/0 error 1`] = `"number \\"5\\" is not iterable"`;
+
+exports[`builtins jq join/1 cannot join 1`] = `"Operator + cannot be applied to string and object"`;
+
+exports[`builtins jq join/1 cannot join 2`] = `"Operator + cannot be applied to string and array"`;
+
+exports[`builtins jq last/0 error 1`] = `"Cannot index string with number"`;
+
+exports[`builtins jq last/0 error 2`] = `"Cannot index object with number"`;
+
+exports[`builtins jq limit/2 invalid item count 1`] = `"Operator - cannot be applied to string and number"`;
+
+exports[`builtins jq match/1 error invalid input array 1`] = `"Got array, string required"`;
+
+exports[`builtins jq match/1 error invalid input boolean 1`] = `"Got boolean, string required"`;
+
+exports[`builtins jq match/1 error invalid input null 1`] = `"Got null, string required"`;
+
+exports[`builtins jq match/1 error invalid input number 1`] = `"Got number, string required"`;
+
+exports[`builtins jq match/1 error invalid input object 1`] = `"Got object, string required"`;
+
+exports[`builtins jq match/1 error invalid regex 1`] = `"Invalid regular expression: /[/: Unterminated character class"`;
+
+exports[`builtins jq nth/1 error 1`] = `"Cannot index string with number"`;
+
+exports[`builtins jq nth/1 error 2`] = `"Cannot index object with number"`;
+
+exports[`builtins jq range/1 error range("") 1`] = `"Got string, number required"`;
+
+exports[`builtins jq range/3 error range(0;"";2) 1`] = `"Maximum call stack size exceeded"`;
+
+exports[`builtins jq to_entries/0 error 1`] = `"number has no keys"`;
+
+exports[`builtins jq with_entries/1 error 1`] = `"number has no keys"`;
+
+exports[`builtins native delpaths/1 cannot index [] | delpaths([[""]]) 1`] = `"Cannot index array with string"`;
+
+exports[`builtins native delpaths/1 cannot index {} | delpaths([[0]]) 1`] = `"Cannot index object with number"`;
+
+exports[`builtins native delpaths/1 cannot index {a:1} | delpaths([["a", 0]]) 1`] = `"Cannot delete fields from number"`;
+
+exports[`builtins native delpaths/1 cannot index 1 | delpaths([[""]]) 1`] = `"Cannot delete fields from number"`;
+
+exports[`builtins native delpaths/1 cannot index 1 | delpaths([[0]]) 1`] = `"Cannot delete fields from number"`;
+
+exports[`builtins native delpaths/1 invalid arg 1`] = `"Expected an array of paths"`;
+
+exports[`builtins native delpaths/1 invalid arg 2`] = `"Expected an array of paths"`;
+
+exports[`builtins native delpaths/1 invalid arg 3`] = `"Expected an array of paths"`;
+
+exports[`builtins native delpaths/1 invalid arg 4`] = `"Expected an array of paths"`;
+
+exports[`builtins native has/1 error "" | has(0) 1`] = `"Cannot check whether string has a number key"`;
+
+exports[`builtins native has/1 error [] | has("") 1`] = `"Cannot check whether array has a string key"`;
+
+exports[`builtins native has/1 error [] | has([]) 1`] = `"Cannot check whether array has a array key"`;
+
+exports[`builtins native has/1 error {} | has(0) 1`] = `"Cannot check whether object has a number key"`;
+
+exports[`builtins native has/1 error 0 | has(0) 1`] = `"Cannot check whether number has a number key"`;
+
+exports[`builtins native keys/0 error "" | keys 1`] = `"string has no keys"`;
+
+exports[`builtins native keys/0 error 0 | keys 1`] = `"number has no keys"`;
+
+exports[`builtins native keys/0 error false | keys 1`] = `"boolean has no keys"`;
+
+exports[`builtins native keys/0 error null | keys 1`] = `"null has no keys"`;
+
+exports[`builtins native keys_unsorted/0 error "" | keys_unsorted 1`] = `"string has no keys"`;
+
+exports[`builtins native keys_unsorted/0 error 0 | keys_unsorted 1`] = `"number has no keys"`;
+
+exports[`builtins native keys_unsorted/0 error false | keys_unsorted 1`] = `"boolean has no keys"`;
+
+exports[`builtins native keys_unsorted/0 error null | keys_unsorted 1`] = `"null has no keys"`;
+
+exports[`builtins native length/0 boolean 1`] = `"boolean has no length"`;
+
+exports[`builtins native length/0 number 1`] = `"number has no length"`;
+
+exports[`builtins native range/2 error range("";6) 1`] = `"Got string, number required"`;
+
+exports[`builtins native range/2 error range(0;"") 1`] = `"Got string, number required"`;

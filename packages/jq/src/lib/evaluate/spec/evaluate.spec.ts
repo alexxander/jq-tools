@@ -1,6 +1,8 @@
 import { evaluate } from '../evaluate';
 import {
   comparisonTest,
+  expectCode,
+  expectCodeError,
   helper,
   testCode,
   testCodeError,
@@ -22,6 +24,19 @@ describe('evaluate', () => {
     it('empty input', () => {
       expect(helper('[][].a')).toEqual([]);
     });
+    describe('on null', () => {
+      testCode('null.a', [null]);
+      testCode('null[""]', [null]);
+      testCode('null[0]', [null]);
+    });
+    describe('not present', () => {
+      testCode('{}.a', [null]);
+      testCode('{}.a.a', [null]);
+      testCode('{}.a[0]', [null]);
+      testCode('[][0]', [null]);
+      testCode('[][0].a', [null]);
+      testCode('[][0][0]', [null]);
+    });
     describe('optional', () => {
       it('simple', () => {
         expect(helper('.a?', 100)).toEqual([]);
@@ -33,18 +48,67 @@ describe('evaluate', () => {
     it('str', () => {
       expect(helper('."$abc"', { $abc: 100 })).toEqual([100]);
     });
-    it('num', () => {
-      expect(helper('.[1]', [0, 100])).toEqual([100]);
+    describe('num', () => {
+      it('positive', () => {
+        expect(helper('.[1]', [0, 100])).toEqual([100]);
+      });
+      it('negative', () => {
+        expect(helper('.[-1]', [0, 100])).toEqual([100]);
+        expect(helper('.[-2]', [0, 100])).toEqual([0]);
+      });
     });
     it('expression', () => {
       expect(helper('.[1+3*2]', [0, 1, 2, 3, 4, 5, 6, 100])).toEqual([100]);
+    });
+    describe('array', () => {
+      it('[0]', () => {
+        expectCode('[0, 1, 0, 1, 2, 0, 1, 2, 3, 0, 1, 2, 3, 4] | .[[0]]', [
+          [0, 2, 5, 9],
+        ]);
+      });
+      it('[0,1]', () => {
+        expectCode('[0, 1, 0, 1, 2, 0, 1, 2, 3, 0, 1, 2, 3, 4] | .[[0,1]]', [
+          [0, 2, 5, 9],
+        ]);
+      });
+      it('[0,1,2]', () => {
+        expectCode('[0, 1, 0, 1, 2, 0, 1, 2, 3, 0, 1, 2, 3, 4] | .[[0,1,2]]', [
+          [2, 5, 9],
+        ]);
+      });
+      it('[0,1,2,3]', () => {
+        expectCode(
+          '[0, 1, 0, 1, 2, 0, 1, 2, 3, 0, 1, 2, 3, 4] | .[[0,1,2,3]]',
+          [[5, 9]]
+        );
+      });
+      it('[]', () => {
+        expectCode('[0, 1, 0, 1, 2, 0, 1, 2, 3, 0, 1, 2, 3, 4] | .[[]]', [[]]);
+      });
+      it('[[5]]', () => {
+        expectCode('[0, 1, 0, 1, 2, 0, 1, 2, 3, 0, 1, 2, 3, 4] | .[[5]]', [[]]);
+      });
+      it('[[5,6,7]]', () => {
+        expectCode('[0, 1, 0, 1, 2, 0, 1, 2, 3, 0, 1, 2, 3, 4] | .[[5,6,7]]', [
+          [],
+        ]);
+      });
+      it('[[null,[],{}]]', () => {
+        expectCode('[0,1,2, null, [], {}, 3,4,5] | .[[null,[],{}]]', [[3]]);
+      });
+      describe('empty input', () => {
+        it('[]', () => {
+          expectCode('[] | .[[]]', [[]]);
+        });
+        it('[[5]]', () => {
+          expectCode('[] | .[[5]]', [[]]);
+        });
+      });
     });
 
     describe('cannot index', () => {
       testCodeError('null[null]');
       testCodeError('null[false]');
-      testCodeError('null[0]');
-      testCodeError('null[""]');
       testCodeError('null[[]]');
       testCodeError('null[{}]');
 
@@ -72,7 +136,6 @@ describe('evaluate', () => {
       testCodeError('[][null]');
       testCodeError('[][false]');
       testCodeError('[][""]');
-      testCodeError('[][[]]');
       testCodeError('[][{}]');
 
       testCodeError('{}[null]');
@@ -85,53 +148,100 @@ describe('evaluate', () => {
     });
   });
   describe('slice', () => {
-    it('full', () => {
-      expect(
-        helper(
-          '.[3:5]',
-          [0, 1, 2, 30, 40, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-        )
-      ).toEqual([[30, 40]]);
-    });
-    it('left', () => {
-      expect(helper('.[1:]', [1, 2, 3])).toEqual([[2, 3]]);
-    });
-    it('right', () => {
-      expect(helper('.[:2]', [0, 1, 2, 3, 4, 5])).toEqual([[0, 1]]);
-    });
-    it('both omitted', () => {
-      // NOTE: The original jq implementation would throw an error here
-      expect(helper('.[:]', [0, 1, 2, 3, 4, 5])).toEqual([[0, 1, 2, 3, 4, 5]]);
-    });
-    it('expressions', () => {
-      expect(
-        helper(
-          '.[1+3*1:5+3+2]',
-          [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-        )
-      ).toEqual([[4, 5, 6, 7, 8, 9]]);
-    });
-    it('combinations', () => {
-      expect(helper('1,2 | [0,1,2,3,4,5][1,2:3,4]')).toEqual([
-        [1, 2],
-        [1, 2, 3],
-        [2],
-        [2, 3],
-        [1, 2],
-        [1, 2, 3],
-        [2],
-        [2, 3],
-      ]);
-    });
-    describe('negative', () => {
+    describe('array', () => {
+      it('full', () => {
+        expect(
+          helper(
+            '.[3:5]',
+            [0, 1, 2, 30, 40, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+          )
+        ).toEqual([[30, 40]]);
+      });
       it('left', () => {
-        expect(helper('[0,1,2,3,4,5][-5:5]')).toEqual([[1, 2, 3, 4]]);
+        expect(helper('.[1:]', [1, 2, 3])).toEqual([[2, 3]]);
       });
       it('right', () => {
-        expect(helper('[0,1,2,3,4,5][:-3]')).toEqual([[0, 1, 2]]);
+        expect(helper('.[:2]', [0, 1, 2, 3, 4, 5])).toEqual([[0, 1]]);
       });
-      it('both', () => {
-        expect(helper('[0,1,2,3,4,5][-3:-1]')).toEqual([[3, 4]]);
+      it('both omitted', () => {
+        // NOTE: The original jq implementation would throw an error here
+        expect(helper('.[:]', [0, 1, 2, 3, 4, 5])).toEqual([
+          [0, 1, 2, 3, 4, 5],
+        ]);
+      });
+      it('expressions', () => {
+        expect(
+          helper(
+            '.[1+3*1:5+3+2]',
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+          )
+        ).toEqual([[4, 5, 6, 7, 8, 9]]);
+      });
+      it('combinations', () => {
+        expect(helper('1,2 | [0,1,2,3,4,5][1,2:3,4]')).toEqual([
+          [1, 2],
+          [1, 2, 3],
+          [2],
+          [2, 3],
+          [1, 2],
+          [1, 2, 3],
+          [2],
+          [2, 3],
+        ]);
+      });
+      describe('negative', () => {
+        it('left', () => {
+          expect(helper('[0,1,2,3,4,5][-5:5]')).toEqual([[1, 2, 3, 4]]);
+        });
+        it('right', () => {
+          expect(helper('[0,1,2,3,4,5][:-3]')).toEqual([[0, 1, 2]]);
+        });
+        it('both', () => {
+          expect(helper('[0,1,2,3,4,5][-3:-1]')).toEqual([[3, 4]]);
+        });
+      });
+    });
+    describe('string', () => {
+      it('full', () => {
+        expect(helper('.[3:5]', '012ab56789')).toEqual(['ab']);
+      });
+      it('left', () => {
+        expect(helper('.[1:]', '123')).toEqual(['23']);
+      });
+      it('right', () => {
+        expect(helper('.[:2]', '012345')).toEqual(['01']);
+      });
+      it('both omitted', () => {
+        // NOTE: The original jq implementation would throw an error here
+        expect(helper('.[:]', '012345')).toEqual(['012345']);
+      });
+      it('expressions', () => {
+        expect(helper('.[1+3*1:5+3+2]', '0123456789abcdef')).toEqual([
+          '456789',
+        ]);
+      });
+      it('combinations', () => {
+        expect(helper('1,2 | "012345"[1,2:3,4]')).toEqual([
+          '12',
+          '123',
+          '2',
+          '23',
+          '12',
+          '123',
+          '2',
+          '23',
+        ]);
+      });
+      describe('negative', () => {
+        it('left', () => {
+          expect(helper('"012345"[-5:5]')).toEqual(['1234']);
+        });
+        it('right', () => {
+          expect(helper('"012345"[:-3]')).toEqual(['012']);
+        });
+        it('both', () => {
+          expect(helper('"012345"[-3:-1]')).toEqual(['34']);
+        });
       });
     });
 
@@ -159,7 +269,6 @@ describe('evaluate', () => {
 
       testCodeError('""[null:]');
       testCodeError('""[false:]');
-      testCodeError('""[0:]');
       testCodeError('""["":]');
       testCodeError('""[[]:]');
       testCodeError('""[{}:]');
@@ -274,6 +383,71 @@ describe('evaluate', () => {
       });
       it('def func(a): 10|a;', () => {
         expect(helper('def func(a): 10|a; 5 | func(.*2)')).toEqual([20]);
+      });
+    });
+    describe('scope', () => {
+      it('variables', () => {
+        expectCode(
+          '1 as $var | def func: $var; 2 as $var | "\\($var):\\(func)"',
+          ['2:1']
+        );
+      });
+      it('filters', () => {
+        expectCode(
+          'def val: 1; def func: val; def val: 2; "\\(val):\\(func)"',
+          ['2:1']
+        );
+      });
+      describe('filter args', () => {
+        it('filter', () => {
+          expectCode(
+            'def map(f): [.[] | f]; def func: [. > 3]; [0,1,2,3,4,5] | map(func)',
+            [[[false], [false], [false], [false], [true], [true]]]
+          );
+        });
+        it('expression with filter', () => {
+          expectCode(
+            'def map(f): [.[] | f]; def func: .+1; [0,1,2,3,4,5] | map(func*2)',
+            [[2, 4, 6, 8, 10, 12]]
+          );
+        });
+        it('map builtin', () => {
+          expectCode('def f: [. > 3]; [0,1,2,3,4,5] | map(f)', [
+            [[false], [false], [false], [false], [true], [true]],
+          ]);
+        });
+        it('filter overridden by filter arg', () => {
+          expectCode(
+            'def map(f): [.[] | f]; def f: [. > 3]; [0,1,2,3,4,5] | map(f)',
+            [[[false], [false], [false], [false], [true], [true]]]
+          );
+        });
+        it('filter overridden by its own arg: f(f)', () => {
+          expectCode('def f(f): f; 1 | f(.)', [1]);
+        });
+      });
+      describe('recursion', () => {
+        it('simple', () => {
+          expectCode('def f($a): if $a > 0 then f(-1) else 0 end; f(5)', [0]);
+        });
+        it('nested', () => {
+          expectCode(
+            'def f($a): if $a > 0 then f(-1) else 0 end; def test: f(5); test',
+            [0]
+          );
+        });
+        it('filter arg', () => {
+          expectCode(
+            'def f($a): if $a > 0 then f(-1) else 0 end; def test(x): x; test(f(5))',
+            [0]
+          );
+        });
+        it('filter arg - with override', () => {
+          expectCode(
+            'def f($a): if $a > 0 then f(-1) else 0 end; def test(f): f; test(f(5))',
+            [0]
+          );
+        });
       });
     });
     it('complex', () => {
@@ -411,6 +585,24 @@ describe('evaluate', () => {
             '2:2:2:2::b',
           ]);
         });
+      });
+    });
+    describe('undefined filter', () => {
+      it('simple', () => {
+        expectCodeError('f');
+      });
+      it('arity 1', () => {
+        expectCodeError('def f($a): 1; f');
+      });
+      it('arity 2', () => {
+        expectCodeError('def f($a): 1; f(1;2)');
+      });
+      it('inside filter arg', () => {
+        expectCodeError('def f($a): 1; def test(f): f; test(f)');
+      });
+      it('inside filter arg - unused', () => {
+        // TODO Fix this
+        expectCodeError('def f($a): 1; def test(f): 1; test(f)');
       });
     });
   });
@@ -575,6 +767,22 @@ describe('evaluate', () => {
           });
           it('string * -100', () => {
             expect(helper('"xy" * -100', 100)).toEqual([null]);
+          });
+        });
+        describe('object * object', () => {
+          it('simple', () => {
+            expectCode('{a:1,b:2} * {a:null}', [{ a: null, b: 2 }]);
+          });
+          it('complex', () => {
+            expectCode(
+              '{a:1,b:{c:{d:2, e:3},f:{},g:[4]}} * {a:5,b:{c:{d:6,h:7},f:{i:8,j:9},g:[]}}',
+              [
+                {
+                  a: 5,
+                  b: { c: { d: 6, e: 3, h: 7 }, f: { i: 8, j: 9 }, g: [] },
+                },
+              ]
+            );
           });
         });
         it('combinations', () => {
@@ -865,6 +1073,53 @@ describe('evaluate', () => {
             expect(helper('false or false')).toEqual([false]);
           });
         });
+        describe('empty', () => {
+          testCode('empty and false', []);
+          testCode('empty and true', []);
+          testCode('empty or false', []);
+          testCode('empty or true', []);
+          testCode('false and empty', [false]);
+          testCode('true and empty', []);
+          testCode('false or empty', []);
+          testCode('true or empty', [true]);
+        });
+        describe('multi', () => {
+          testCode('(false,true) and (false,true)', [false, false, true]);
+          testCode('(false,true) or (false,true)', [false, true, true]);
+          testCode('(true,true) and (false,true,false)', [
+            false,
+            true,
+            false,
+            false,
+            true,
+            false,
+          ]);
+          testCode(
+            '(true,true) and (true, false, true) and (false,true,false)',
+            [
+              false,
+              true,
+              false,
+              false,
+              false,
+              true,
+              false,
+              false,
+              true,
+              false,
+              false,
+              false,
+              true,
+              false,
+            ]
+          );
+        });
+        describe('errors', () => {
+          testCode('false and error("ERROR")', [false]);
+          testCodeError('true and error("ERROR")');
+          testCode('true or error("ERROR")', [true]);
+          testCodeError('false or error("ERROR")');
+        });
       });
       describe('alternative', () => {
         testCode('false // true', [true]);
@@ -905,9 +1160,211 @@ describe('evaluate', () => {
           expect(helper('(true or true) and false')).toEqual([false]);
         });
       });
+      describe('assignment', () => {
+        describe('=', () => {
+          describe('RHS .', () => {
+            testCode('{a: {b:1},b:2} | (.a.b,.b) = .', [
+              { a: { b: { a: { b: 1 }, b: 2 } }, b: { a: { b: 1 }, b: 2 } },
+            ]);
+            testCode('{a: {b:1},b:2} | .a = .b', [{ a: 2, b: 2 }]);
+          });
+          describe('RHS multi', () => {
+            testCode('{a: {b:1},b:2} | .a = (1,2,3)', [
+              { a: 1, b: 2 },
+              { a: 2, b: 2 },
+              { a: 3, b: 2 },
+            ]);
+          });
+          it('LHS filter', () => {
+            expectCode('[1,2,3,4,5,6,7,8,9,10] | (.[] | select(.>5)) = 0', [
+              [1, 2, 3, 4, 5, 0, 0, 0, 0, 0],
+            ]);
+          });
+          it('create new path', () => {
+            expectCode('{a:1} | .b.c.d = 10', [{ a: 1, b: { c: { d: 10 } } }]);
+          });
+          it('create new path in null', () => {
+            expectCode('null | .b.c.d = 10', [{ b: { c: { d: 10 } } }]);
+          });
+          describe('wierd cases', () => {
+            // If the input and the LHS of the assignment are equal to the same number or boolean,
+            //   or if they are both equal to null, the input is replaced with the result of the RHS.
+            testCode('1 | 1 = 5', [5]);
+            testCode('2 | 2 = 5', [5]);
+            testCodeError('2 | 1 = 5');
+
+            testCode('true | true = 5', [5]);
+            testCodeError('true | false = 5');
+
+            testCode('null | null = 5', [5]);
+            testCodeError('null | true = 5');
+            testCodeError('null | 0 = 5');
+            testCodeError('0 | null = 5');
+            testCodeError('false | null = 5');
+          });
+        });
+        describe('|=', () => {
+          describe('RHS .', () => {
+            testCode('{a: {b:1},b:2} | (.a.b,.b) |= .', [
+              { a: { b: 1 }, b: 2 },
+            ]);
+            testCode('{a: {b:1},b:2} | .a |= .b', [{ a: 1, b: 2 }]);
+            testCode('{a: {b:1},b:2} | (.a.b,.b) |= . * 2', [
+              { a: { b: 2 }, b: 4 },
+            ]);
+          });
+          describe('RHS multi', () => {
+            testCode('{a: {b:1},b:2} | .a |= (1,2,3)', [{ a: 1, b: 2 }]);
+          });
+          describe('LHS filter', () => {
+            it('input ignored', () => {
+              expectCode('[1,2,3,4,5,6,7,8,9,10] | (.[] | select(.>5)) |= 0', [
+                [1, 2, 3, 4, 5, 0, 0, 0, 0, 0],
+              ]);
+            });
+            it('input used', () => {
+              expectCode(
+                '[1,2,3,4,5,6,7,8,9,10] | (.[] | select(.>5)) |= .*10',
+                [[1, 2, 3, 4, 5, 60, 70, 80, 90, 100]]
+              );
+            });
+          });
+        });
+        describe('Arithmetic update-assignment', () => {
+          describe('+=', () => {
+            testCode('{a:{b:1}, b:2} | (.a.b, .b) += (5, null)', [
+              { a: { b: 6 }, b: 7 },
+              { a: { b: 1 }, b: 2 },
+            ]);
+            testCode('[[1,2],[3,4]] | (.[]) += .', [
+              [
+                [1, 2, [1, 2], [3, 4]],
+                [3, 4, [1, 2], [3, 4]],
+              ],
+            ]);
+          });
+          describe('-=', () => {
+            testCode('{a:{b:1}, b:2} | (.a.b, .b) -= (1,2)', [
+              { a: { b: 0 }, b: 1 },
+              { a: { b: -1 }, b: 0 },
+            ]);
+          });
+          describe('*=', () => {
+            testCode('{a:{b:1}, b:2} | (.a.b, .b) *= (1,2)', [
+              { a: { b: 1 }, b: 2 },
+              { a: { b: 2 }, b: 4 },
+            ]);
+            testCode('{a:{a:{c:3}, b:1}, b:2} | .a *= .', [
+              { a: { a: { c: 3, a: { c: 3 }, b: 1 }, b: 2 }, b: 2 },
+            ]);
+          });
+          describe('/=', () => {
+            testCode('{a:{b:1}, b:2} | (.a.b, .b) /= (2,4)', [
+              { a: { b: 0.5 }, b: 1 },
+              { a: { b: 0.25 }, b: 0.5 },
+            ]);
+          });
+          describe('%=', () => {
+            testCode('{a:{b:13}, b:22} | (.a.b, .b) %= (3,5)', [
+              { a: { b: 1 }, b: 1 },
+              { a: { b: 3 }, b: 2 },
+            ]);
+          });
+          describe('//=', () => {
+            testCode('{a:{b:null}, b:2} | (.a.b, .b) //= ("a","b")', [
+              { a: { b: 'a' }, b: 2 },
+              { a: { b: 'b' }, b: 2 },
+            ]);
+          });
+        });
+        describe('error', () => {
+          expectCodeError('[1] | 0 = 10');
+          expectCodeError('[1] | 0 |= 10');
+          expectCodeError('[1] | 0 *= 10');
+          expectCodeError('[1] | "" = 10');
+          expectCodeError('[1] | "" |= 10');
+          expectCodeError('[1] | "" *= 10');
+
+          expectCodeError('[1] | .a.b = 10');
+          expectCodeError('[1] | .[0].b = 10');
+          expectCodeError('[1] as $var | $var = 10');
+          expectCodeError('[1] as $var | $var[0] *= 10');
+
+          expectCodeError('{a:1} | 0 = 10');
+          expectCodeError('{a:1} | 0 |= 10');
+          expectCodeError('{a:1} | 0 *= 10');
+          expectCodeError('{a:1} | "" = 10');
+          expectCodeError('{a:1} | "" |= 10');
+          expectCodeError('{a:1} | "" *= 10');
+
+          expectCodeError('{a:1} | .a.b = 10');
+          expectCodeError('{a:1} as $var | $var = 10');
+          expectCodeError('{a:1} as $var | $var.a *= 10');
+        });
+      });
       it('empty argument', () => {
         expect(helper('([][]) + 5')).toEqual([]);
       });
+    });
+  });
+  describe('path', () => {
+    it('.a', () => {
+      expectCode('null | path(.a)', [['a']]);
+    });
+    it('.a[0,1]', () => {
+      expectCode('null | path(.a[0,1])', [
+        ['a', 0],
+        ['a', 1],
+      ]);
+    });
+    it('.a.b, .b', () => {
+      expectCode('null | path(.a.b, .b)', [['a', 'b'], ['b']]);
+    });
+    it('.[]', () => {
+      expectCode('[1,2,3,4,5] | path(.[])', [[0], [1], [2], [3], [4]]);
+    });
+    it('.[] | select(.>3)', () => {
+      expectCode('[1,2,3,4,5] | path(.[] | select(.>3))', [[3], [4]]);
+    });
+    it('1 | path(.)', () => {
+      expectCode('1 | path(.)', [[]]);
+    });
+    it('with filter', () => {
+      expectCode('def f($a): .a.b[$a].c; null | path(f(5))', [
+        ['a', 'b', 5, 'c'],
+      ]);
+    });
+    describe('wierd cases', () => {
+      // If the input and the path expression are equal to the same number or boolean,
+      //   or if they are both equal to null, the path is equal to []
+      testCode('1 | path(1)', [[]]);
+      testCode('2 | path(2)', [[]]);
+      testCodeError('2 | path(1)');
+
+      testCode('true | path(true)', [[]]);
+      testCodeError('true | path(false)');
+
+      testCode('null | path(null)', [[]]);
+      testCodeError('null | path(true)');
+      testCodeError('null | path(0)');
+      testCodeError('0 | path(null)');
+      testCodeError('false | path(null)');
+    });
+    describe('error', () => {
+      expectCodeError('[1] | path(0)');
+      expectCodeError('[1] | path("")');
+
+      expectCodeError('[1] | path(.a.b)');
+      expectCodeError('[1] | path(.[0].b)');
+      expectCodeError('[1] as $var | path($var)');
+      expectCodeError('[1] as $var | path($var[0])');
+
+      expectCodeError('{a:1} | path(0)');
+      expectCodeError('{a:1} | path("")');
+
+      expectCodeError('{a:1} | path(.a.b)');
+      expectCodeError('{a:1} as $var | path($var)');
+      expectCodeError('{a:1} as $var | path($var.a)');
     });
   });
   describe('array', () => {

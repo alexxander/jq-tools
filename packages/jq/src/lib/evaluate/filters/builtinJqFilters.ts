@@ -1,5 +1,7 @@
+import { parseBuiltinJqFilters } from './lib/parseBuiltinJqFilters';
+
 // https://github.com/stedolan/jq/blob/master/src/builtin.jq
-export const jqBuiltins = `
+export const builtinJqFilters = parseBuiltinJqFilters(`
 def halt_error: halt_error(5);
 def error(msg): msg|error;
 def map(f): [.[] | f];
@@ -293,4 +295,4 @@ def JOIN($idx; stream; idx_expr; join_expr):
   stream | [., $idx[idx_expr]] | join_expr;
 def IN(s): any(s == .; .);
 def IN(src; s): any(src == s; .);
-`;
+`);

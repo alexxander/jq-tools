@@ -24,9 +24,8 @@ features still lack an implementation:
 
 - Modules
 - Assignment operators `=`, `|=`, `+=`, `-=`, `*=`, `/=`, `%=`, `//=`.
-- Multiplication of objects (e.g. `{a: 1} * {b: 2}`)
-- Most of the builtins (except for `length`)
 - Most of the formats (except for `@base64` and `@base64d`)
+- Most of the builtins (except for `length`)
 
 #### `jq` template tag (`jq<In=any, Out=unknown>`)
 
