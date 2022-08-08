@@ -1,5 +1,5 @@
 import { FormatAst } from '../parser/AST';
-import { notDefinedError, notImplementedError } from './errors';
+import { notDefinedError, notImplementedError } from './evaluateErrors';
 
 const formats: Record<string, (val: string) => string> = {
   '@text'(val: string) {

@@ -21,30 +21,33 @@ import {
 } from './utils';
 import { generateObjects } from './generateObjects';
 import { generateCombinations } from './generateCombinations';
-import { notDefinedError, notImplementedError } from './errors';
+import { JqEvaluateError } from '../errors';
 import { applyFormat } from './applyFormat';
 import { filters } from './filters/filters';
 import { Parser } from '../parser/Parser';
 import { isNativeFilter, NativeFilter } from './filters/nativeFilter';
+import { notDefinedError, notImplementedError } from './evaluateErrors';
 
 function cannotIterateError(value: any) {
   const preview = isAtom(value) ? ` "${value}"` : '';
-  return new Error(`${typeOf(value)}${preview} is not iterable`);
+  return new JqEvaluateError(`${typeOf(value)}${preview} is not iterable`);
 }
 
 function cannotIndexError(val: any, index: any) {
-  return new Error(`Cannot index ${typeOf(val)} with ${typeOf(index)}`);
+  return new JqEvaluateError(
+    `Cannot index ${typeOf(val)} with ${typeOf(index)}`
+  );
 }
 
 function cannotSliceError(val: any) {
-  return new Error(`Cannot slice ${typeOf(val)}`);
+  return new JqEvaluateError(`Cannot slice ${typeOf(val)}`);
 }
 
 function invalidSliceIndicesError() {
-  return new Error('Array slice indices must be numbers');
+  return new JqEvaluateError('Array slice indices must be numbers');
 }
 
-class BreakError extends Error {
+class BreakError extends JqEvaluateError {
   constructor(public readonly value: string) {
     super(`Label ${value} is not defined`);
   }
@@ -485,7 +488,9 @@ class Environment {
         break;
       case 'arrayDestructuring': {
         if (typeOf(val) !== 'array') {
-          throw new Error(`${typeOf(val)} cannot be destructured as an array`);
+          throw new JqEvaluateError(
+            `${typeOf(val)} cannot be destructured as an array`
+          );
         }
         const results = destructuring.destructuring.map((item, i) =>
           Array.from(
@@ -499,7 +504,9 @@ class Environment {
       }
       case 'objectDestructuring':
         if (typeOf(val) !== 'object') {
-          throw new Error(`${typeOf(val)} cannot be destructured as an object`);
+          throw new JqEvaluateError(
+            `${typeOf(val)} cannot be destructured as an object`
+          );
         }
 
         const results = destructuring.entries.map((entry) => {

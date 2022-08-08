@@ -36,6 +36,7 @@ import {
   VarDeclarationAst,
 } from '../parser/AST';
 import { Parser } from '../parser/Parser';
+import { JqPrintError } from '../errors';
 
 export function print(ast: ProgAst): string {
   return new Print().root(ast);
@@ -304,7 +305,7 @@ class Print {
         return this.recursiveDescent(ast);
 
       default:
-        throw new Error(`Unknown ast node: ${(ast as any).type}`);
+        throw new JqPrintError(`Unknown ast node: ${(ast as any).type}`);
     }
   }
 

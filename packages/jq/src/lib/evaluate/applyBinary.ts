@@ -12,20 +12,21 @@ import {
 } from './utils';
 import { isEqual } from 'lodash';
 import { compare } from './compare';
-import { notImplementedError } from './errors';
+import { JqEvaluateError } from '../errors';
+import { notImplementedError } from './evaluateErrors';
 
 function cannotApplyOperatorToError(op: BinaryOperator, left: any, right: any) {
-  return new Error(
+  return new JqEvaluateError(
     `Operator ${op} cannot be applied to ${typeOf(left)} and ${typeOf(right)}`
   );
 }
 
 function cannotApplyOperator(op: BinaryOperator) {
-  return new Error(`applyBinary: Cannot apply operator '${op}'`);
+  return new JqEvaluateError(`applyBinary: Cannot apply operator '${op}'`);
 }
 
 function divisionByZeroError() {
-  return new Error('Division by zero');
+  return new JqEvaluateError('Division by zero');
 }
 
 function applyBinary(op: BinaryOperator, left: any, right: any): any {

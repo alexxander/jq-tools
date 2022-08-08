@@ -1,6 +1,6 @@
-import { notImplementedError } from '../errors';
 import { Type, typeOf } from '../utils';
 import { NativeFilter } from './nativeFilter';
+import { notImplementedError } from '../evaluateErrors';
 
 export const filters: Record<string, NativeFilter> = {
   'input_line_number/0'() {

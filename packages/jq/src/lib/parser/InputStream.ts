@@ -1,3 +1,5 @@
+import { JqParseError } from '../errors';
+
 export class InputStream {
   private state = {
     pos: 0,
@@ -36,7 +38,7 @@ export class InputStream {
   }
 
   croak(msg: string) {
-    return new Error(
+    return new JqParseError(
       `${msg} (${this.state.line}:${
         this.state.col
       })\n\n${this.getLine()}\n${this.getErrorPointer()}`
