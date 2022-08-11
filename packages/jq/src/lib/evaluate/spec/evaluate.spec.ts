@@ -1278,28 +1278,28 @@ describe('evaluate', () => {
           });
         });
         describe('error', () => {
-          expectCodeError('[1] | 0 = 10');
-          expectCodeError('[1] | 0 |= 10');
-          expectCodeError('[1] | 0 *= 10');
-          expectCodeError('[1] | "" = 10');
-          expectCodeError('[1] | "" |= 10');
-          expectCodeError('[1] | "" *= 10');
+          testCodeError('[1] | 0 = 10');
+          testCodeError('[1] | 0 |= 10');
+          testCodeError('[1] | 0 *= 10');
+          testCodeError('[1] | "" = 10');
+          testCodeError('[1] | "" |= 10');
+          testCodeError('[1] | "" *= 10');
 
-          expectCodeError('[1] | .a.b = 10');
-          expectCodeError('[1] | .[0].b = 10');
-          expectCodeError('[1] as $var | $var = 10');
-          expectCodeError('[1] as $var | $var[0] *= 10');
+          testCodeError('[1] | .a.b = 10');
+          testCodeError('[1] | .[0].b = 10');
+          testCodeError('[1] as $var | $var = 10');
+          testCodeError('[1] as $var | $var[0] *= 10');
 
-          expectCodeError('{a:1} | 0 = 10');
-          expectCodeError('{a:1} | 0 |= 10');
-          expectCodeError('{a:1} | 0 *= 10');
-          expectCodeError('{a:1} | "" = 10');
-          expectCodeError('{a:1} | "" |= 10');
-          expectCodeError('{a:1} | "" *= 10');
+          testCodeError('{a:1} | 0 = 10');
+          testCodeError('{a:1} | 0 |= 10');
+          testCodeError('{a:1} | 0 *= 10');
+          testCodeError('{a:1} | "" = 10');
+          testCodeError('{a:1} | "" |= 10');
+          testCodeError('{a:1} | "" *= 10');
 
-          expectCodeError('{a:1} | .a.b = 10');
-          expectCodeError('{a:1} as $var | $var = 10');
-          expectCodeError('{a:1} as $var | $var.a *= 10');
+          testCodeError('{a:1} | .a.b = 10');
+          testCodeError('{a:1} as $var | $var = 10');
+          testCodeError('{a:1} as $var | $var.a *= 10');
         });
       });
       it('empty argument', () => {
@@ -1351,20 +1351,20 @@ describe('evaluate', () => {
       testCodeError('false | path(null)');
     });
     describe('error', () => {
-      expectCodeError('[1] | path(0)');
-      expectCodeError('[1] | path("")');
+      testCodeError('[1] | path(0)');
+      testCodeError('[1] | path("")');
 
-      expectCodeError('[1] | path(.a.b)');
-      expectCodeError('[1] | path(.[0].b)');
-      expectCodeError('[1] as $var | path($var)');
-      expectCodeError('[1] as $var | path($var[0])');
+      testCodeError('[1] | path(.a.b)');
+      testCodeError('[1] | path(.[0].b)');
+      testCodeError('[1] as $var | path($var)');
+      testCodeError('[1] as $var | path($var[0])');
 
-      expectCodeError('{a:1} | path(0)');
-      expectCodeError('{a:1} | path("")');
+      testCodeError('{a:1} | path(0)');
+      testCodeError('{a:1} | path("")');
 
-      expectCodeError('{a:1} | path(.a.b)');
-      expectCodeError('{a:1} as $var | path($var)');
-      expectCodeError('{a:1} as $var | path($var.a)');
+      testCodeError('{a:1} | path(.a.b)');
+      testCodeError('{a:1} as $var | path($var)');
+      testCodeError('{a:1} as $var | path($var.a)');
     });
   });
   describe('array', () => {

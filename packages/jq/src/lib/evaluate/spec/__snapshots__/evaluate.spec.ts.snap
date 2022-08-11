@@ -1,73 +1,5 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[` 1`] = `"Feature 'operator:=' is not implemented"`;
-
-exports[` 2`] = `"Feature 'operator:|=' is not implemented"`;
-
-exports[` 3`] = `
-"Unexpected operator: \\"=\\" (1:9)
-
-[1] | 0 *= 10
----------^"
-`;
-
-exports[` 4`] = `"Feature 'operator:=' is not implemented"`;
-
-exports[` 5`] = `"Feature 'operator:|=' is not implemented"`;
-
-exports[` 6`] = `
-"Unexpected operator: \\"=\\" (1:10)
-
-[1] | \\"\\" *= 10
-----------^"
-`;
-
-exports[` 7`] = `"Cannot index array with string"`;
-
-exports[` 8`] = `"Cannot index number with string"`;
-
-exports[` 9`] = `"Feature 'operator:=' is not implemented"`;
-
-exports[` 10`] = `
-"Unexpected operator: \\"=\\" (1:23)
-
-[1] as $var | $var[0] *= 10
------------------------^"
-`;
-
-exports[` 11`] = `"Feature 'operator:=' is not implemented"`;
-
-exports[` 12`] = `"Feature 'operator:|=' is not implemented"`;
-
-exports[` 13`] = `
-"Unexpected operator: \\"=\\" (1:11)
-
-{a:1} | 0 *= 10
------------^"
-`;
-
-exports[` 14`] = `"Feature 'operator:=' is not implemented"`;
-
-exports[` 15`] = `"Feature 'operator:|=' is not implemented"`;
-
-exports[` 16`] = `
-"Unexpected operator: \\"=\\" (1:12)
-
-{a:1} | \\"\\" *= 10
-------------^"
-`;
-
-exports[` 17`] = `"Cannot index number with string"`;
-
-exports[` 18`] = `"Feature 'operator:=' is not implemented"`;
-
-exports[` 19`] = `
-"Unexpected operator: \\"=\\" (1:24)
-
-{a:1} as $var | $var.a *= 10
-------------------------^"
-`;
-
 exports[`evaluate control structures label-break undefined label different label defined 1`] = `"Label $b is not defined"`;
 
 exports[`evaluate control structures label-break undefined label no label defined 1`] = `"Label $out is not defined"`;
@@ -164,6 +96,74 @@ exports[`evaluate operators binary assignment = wierd cases null | true = 5 1`] 
 
 exports[`evaluate operators binary assignment = wierd cases true | false = 5 1`] = `"Feature 'operator:=' is not implemented"`;
 
+exports[`evaluate operators binary assignment error [1] | "" *= 10 1`] = `
+"Unexpected operator: \\"=\\" (1:10)
+
+[1] | \\"\\" *= 10
+----------^"
+`;
+
+exports[`evaluate operators binary assignment error [1] | "" = 10 1`] = `"Feature 'operator:=' is not implemented"`;
+
+exports[`evaluate operators binary assignment error [1] | "" |= 10 1`] = `"Feature 'operator:|=' is not implemented"`;
+
+exports[`evaluate operators binary assignment error [1] | .[0].b = 10 1`] = `"Cannot index number with string"`;
+
+exports[`evaluate operators binary assignment error [1] | .a.b = 10 1`] = `"Cannot index array with string"`;
+
+exports[`evaluate operators binary assignment error [1] | 0 *= 10 1`] = `
+"Unexpected operator: \\"=\\" (1:9)
+
+[1] | 0 *= 10
+---------^"
+`;
+
+exports[`evaluate operators binary assignment error [1] | 0 = 10 1`] = `"Feature 'operator:=' is not implemented"`;
+
+exports[`evaluate operators binary assignment error [1] | 0 |= 10 1`] = `"Feature 'operator:|=' is not implemented"`;
+
+exports[`evaluate operators binary assignment error [1] as $var | $var = 10 1`] = `"Feature 'operator:=' is not implemented"`;
+
+exports[`evaluate operators binary assignment error [1] as $var | $var[0] *= 10 1`] = `
+"Unexpected operator: \\"=\\" (1:23)
+
+[1] as $var | $var[0] *= 10
+-----------------------^"
+`;
+
+exports[`evaluate operators binary assignment error {a:1} | "" *= 10 1`] = `
+"Unexpected operator: \\"=\\" (1:12)
+
+{a:1} | \\"\\" *= 10
+------------^"
+`;
+
+exports[`evaluate operators binary assignment error {a:1} | "" = 10 1`] = `"Feature 'operator:=' is not implemented"`;
+
+exports[`evaluate operators binary assignment error {a:1} | "" |= 10 1`] = `"Feature 'operator:|=' is not implemented"`;
+
+exports[`evaluate operators binary assignment error {a:1} | .a.b = 10 1`] = `"Cannot index number with string"`;
+
+exports[`evaluate operators binary assignment error {a:1} | 0 *= 10 1`] = `
+"Unexpected operator: \\"=\\" (1:11)
+
+{a:1} | 0 *= 10
+-----------^"
+`;
+
+exports[`evaluate operators binary assignment error {a:1} | 0 = 10 1`] = `"Feature 'operator:=' is not implemented"`;
+
+exports[`evaluate operators binary assignment error {a:1} | 0 |= 10 1`] = `"Feature 'operator:|=' is not implemented"`;
+
+exports[`evaluate operators binary assignment error {a:1} as $var | $var = 10 1`] = `"Feature 'operator:=' is not implemented"`;
+
+exports[`evaluate operators binary assignment error {a:1} as $var | $var.a *= 10 1`] = `
+"Unexpected operator: \\"=\\" (1:24)
+
+{a:1} as $var | $var.a *= 10
+------------------------^"
+`;
+
 exports[`evaluate operators binary boolean errors false or error("ERROR") 1`] = `"Feature 'error/0' is not implemented"`;
 
 exports[`evaluate operators binary boolean errors true and error("ERROR") 1`] = `"Feature 'error/0' is not implemented"`;
@@ -195,6 +195,40 @@ exports[`evaluate operators binary multiplication incompatible types 5 * [1,2,3]
 exports[`evaluate operators binary subtraction incompatible types "1"-1 1`] = `"Operator - cannot be applied to string and number"`;
 
 exports[`evaluate operators binary subtraction incompatible types null-"a" 1`] = `"Operator - cannot be applied to null and string"`;
+
+exports[`evaluate path error [1] | path("") 1`] = `"Feature 'path/1' is not implemented"`;
+
+exports[`evaluate path error [1] | path(.[0].b) 1`] = `"Cannot index number with string"`;
+
+exports[`evaluate path error [1] | path(.a.b) 1`] = `"Cannot index array with string"`;
+
+exports[`evaluate path error [1] | path(0) 1`] = `"Feature 'path/1' is not implemented"`;
+
+exports[`evaluate path error [1] as $var | path($var) 1`] = `"Feature 'path/1' is not implemented"`;
+
+exports[`evaluate path error [1] as $var | path($var[0]) 1`] = `"Feature 'path/1' is not implemented"`;
+
+exports[`evaluate path error {a:1} | path("") 1`] = `"Feature 'path/1' is not implemented"`;
+
+exports[`evaluate path error {a:1} | path(.a.b) 1`] = `"Cannot index number with string"`;
+
+exports[`evaluate path error {a:1} | path(0) 1`] = `"Feature 'path/1' is not implemented"`;
+
+exports[`evaluate path error {a:1} as $var | path($var) 1`] = `"Feature 'path/1' is not implemented"`;
+
+exports[`evaluate path error {a:1} as $var | path($var.a) 1`] = `"Feature 'path/1' is not implemented"`;
+
+exports[`evaluate path wierd cases 0 | path(null) 1`] = `"Feature 'path/1' is not implemented"`;
+
+exports[`evaluate path wierd cases 2 | path(1) 1`] = `"Feature 'path/1' is not implemented"`;
+
+exports[`evaluate path wierd cases false | path(null) 1`] = `"Feature 'path/1' is not implemented"`;
+
+exports[`evaluate path wierd cases null | path(0) 1`] = `"Feature 'path/1' is not implemented"`;
+
+exports[`evaluate path wierd cases null | path(true) 1`] = `"Feature 'path/1' is not implemented"`;
+
+exports[`evaluate path wierd cases true | path(false) 1`] = `"Feature 'path/1' is not implemented"`;
 
 exports[`evaluate slice cannot slice ""["":] 1`] = `"Array slice indices must be numbers"`;
 

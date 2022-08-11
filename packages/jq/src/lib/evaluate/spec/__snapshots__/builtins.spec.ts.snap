@@ -28,15 +28,15 @@ exports[`builtins jq last/0 error 2`] = `"Cannot index object with number"`;
 
 exports[`builtins jq limit/2 invalid item count 1`] = `"Operator - cannot be applied to string and number"`;
 
-exports[`builtins jq match/1 error invalid input array 1`] = `"Got array, string required"`;
+exports[`builtins jq match/1 error invalid input array 1`] = `"Got array, string expected"`;
 
-exports[`builtins jq match/1 error invalid input boolean 1`] = `"Got boolean, string required"`;
+exports[`builtins jq match/1 error invalid input boolean 1`] = `"Got boolean, string expected"`;
 
-exports[`builtins jq match/1 error invalid input null 1`] = `"Got null, string required"`;
+exports[`builtins jq match/1 error invalid input null 1`] = `"Got null, string expected"`;
 
-exports[`builtins jq match/1 error invalid input number 1`] = `"Got number, string required"`;
+exports[`builtins jq match/1 error invalid input number 1`] = `"Got number, string expected"`;
 
-exports[`builtins jq match/1 error invalid input object 1`] = `"Got object, string required"`;
+exports[`builtins jq match/1 error invalid input object 1`] = `"Got object, string expected"`;
 
 exports[`builtins jq match/1 error invalid regex 1`] = `"Invalid regular expression: /[/: Unterminated character class"`;
 
@@ -44,7 +44,7 @@ exports[`builtins jq nth/1 error 1`] = `"Cannot index string with number"`;
 
 exports[`builtins jq nth/1 error 2`] = `"Cannot index object with number"`;
 
-exports[`builtins jq range/1 error range("") 1`] = `"Got string, number required"`;
+exports[`builtins jq range/1 error range("") 1`] = `"Got string, number expected"`;
 
 exports[`builtins jq range/3 error range(0;"";2) 1`] = `"Maximum call stack size exceeded"`;
 
@@ -100,6 +100,6 @@ exports[`builtins native length/0 boolean 1`] = `"boolean has no length"`;
 
 exports[`builtins native length/0 number 1`] = `"number has no length"`;
 
-exports[`builtins native range/2 error range("";6) 1`] = `"Got string, number required"`;
+exports[`builtins native range/2 error range("";6) 1`] = `"Got string, number expected"`;
 
-exports[`builtins native range/2 error range(0;"") 1`] = `"Got string, number required"`;
+exports[`builtins native range/2 error range(0;"") 1`] = `"Got string, number expected"`;

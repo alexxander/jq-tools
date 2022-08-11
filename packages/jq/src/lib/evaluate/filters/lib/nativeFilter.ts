@@ -1,7 +1,9 @@
 import { DefAst } from '../../../parser/AST';
-import { Output } from '../../utils';
 
-export type NativeFilter = (input: any, ...args: any[]) => Output;
+export type NativeFilter = (
+  input: any,
+  ...args: any[]
+) => IterableIterator<any>;
 
 export function isNativeFilter(
   val: DefAst | NativeFilter

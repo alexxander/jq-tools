@@ -8,18 +8,22 @@ import {
 import { combineIterators, evaluateBooleanOperator } from './applyBinary';
 import {
   access,
+  createItem,
   EvaluateInput,
-  Input,
+  EvaluateOutput,
+  generateValues,
+  generateItems,
   isAtom,
   isTrue,
-  many,
-  Output,
+  Item,
+  ItemIterator,
   recursiveDescent,
   single,
   toString,
   Type,
   typeIsOneOf,
   typeOf,
+  extractValues,
 } from './utils';
 import { generateObjects } from './generateObjects';
 import { generateCombinations } from './generateCombinations';
@@ -55,9 +59,9 @@ class BreakError extends JqEvaluateError {
   }
 }
 
-export function* evaluate(ast: ProgAst, input: EvaluateInput): Output {
+export function* evaluate(ast: ProgAst, input: EvaluateInput): EvaluateOutput {
   const env = new Environment();
-  yield* env.evaluate(ast.expr, Array.isArray(input) ? many(input) : input);
+  yield* generateValues(env.evaluate(ast.expr, generateItems(input)));
 }
 
 class Environment {
@@ -88,14 +92,20 @@ class Environment {
     return this.getVar(name).value;
   }
 
-  evaluateConditions(ast: ExpressionAst, input: Input) {
-    return Array.from(this.evaluate(ast, input)).map(isTrue);
+  evaluateConditions(ast: ExpressionAst, input: ItemIterator) {
+    return Array.from(this.evaluate(ast, input)).map((item) =>
+      isTrue(item.value)
+    );
   }
 
-  *evaluateForeach(ast: ForeachAst, input: Input, reduceMode = false): Output {
+  *evaluateForeach(
+    ast: ForeachAst,
+    input: ItemIterator,
+    reduceMode = false
+  ): ItemIterator {
     for (const inputItem of input) {
       let first = true;
-      const memorizedStepItems: Output[] = [];
+      const memorizedStepItems: Item[] = [];
       for (const initialValue of this.evaluate(ast.init, single(inputItem))) {
         let res = initialValue;
         const stepItems = first
@@ -103,7 +113,7 @@ class Environment {
           : memorizedStepItems;
         for (const stepItem of stepItems) {
           const scope = this.extend();
-          scope.setVar(ast.var, stepItem);
+          scope.setVar(ast.var, stepItem.value);
           let empty = true;
           for (const update of scope.evaluate(ast.update, single(res))) {
             empty = false;
@@ -116,7 +126,7 @@ class Environment {
               }
             }
           }
-          if (empty) res = null;
+          if (empty) res = createItem(null);
 
           if (first) memorizedStepItems.push(stepItem);
         }
@@ -126,7 +136,7 @@ class Environment {
     }
   }
 
-  *evaluate(ast: ExpressionAst | undefined, input: Input): Output {
+  *evaluate(ast: ExpressionAst | undefined, input: ItemIterator): ItemIterator {
     if (ast === undefined) {
       yield* input;
       return;
@@ -161,22 +171,22 @@ class Environment {
         break;
       }
       case 'str':
-        for (const item of input) {
+        for (const inputItem of input) {
           if (ast.interpolated) {
             const parts = ast.parts
               .map((part) =>
                 typeof part === 'string'
                   ? [part]
-                  : Array.from(this.evaluate(part, single(item))).map((val) =>
-                      applyFormat(ast.format, toString(val))
+                  : Array.from(this.evaluate(part, single(inputItem))).map(
+                      (item) => applyFormat(ast.format, toString(item.value))
                     )
               )
               .reverse();
             for (const combination of generateCombinations(parts)) {
-              yield combination.reverse().join('');
+              yield createItem(combination.reverse().join(''));
             }
           } else {
-            yield ast.value;
+            yield createItem(ast.value);
           }
         }
         break;
@@ -184,12 +194,12 @@ class Environment {
       case 'bool':
       case 'null':
         for (const item of input) {
-          yield ast.value;
+          yield createItem(ast.value);
         }
         break;
       case 'format':
         for (const item of input) {
-          yield applyFormat(ast, toString(item));
+          yield createItem(applyFormat(ast, toString(item.value)));
         }
         break;
       case 'filter':
@@ -201,10 +211,12 @@ class Environment {
             const argSets: any[][] = [];
             for (let i = 0; i < arity; i++) {
               const argExprAst = ast.args[i];
-              argSets.push(Array.from(this.evaluate(argExprAst, single(item))));
+              argSets.push(
+                extractValues(this.evaluate(argExprAst, single(item)))
+              );
             }
             for (const combination of generateCombinations(argSets)) {
-              yield* def.value(item, ...combination);
+              yield* generateItems(def.value(item.value, ...combination));
             }
           } else {
             const argSets: ([ExpressionAst] | any[])[] = [];
@@ -214,7 +226,7 @@ class Environment {
               switch (argDefAst.type) {
                 case 'varArg':
                   argSets.push(
-                    Array.from(this.evaluate(argExprAst, single(item)))
+                    extractValues(this.evaluate(argExprAst, single(item)))
                   );
                   break;
                 case 'filterArg':
@@ -257,7 +269,7 @@ class Environment {
           }
           if (ast.else) expressions.push(ast.else);
 
-          const exprResults: any[][] = [];
+          const exprResults: Item[][] = [];
           const getExprResult = (i: number) => {
             if (!expressions[i]) return [];
             if (!exprResults[i]) {
@@ -293,7 +305,9 @@ class Environment {
             }
           } catch (e: any) {
             if (e instanceof BreakError) throw e;
-            if (ast.catch) yield* this.evaluate(ast.catch, single(e.message));
+            if (ast.catch) {
+              yield* this.evaluate(ast.catch, single(createItem(e.message)));
+            }
           }
         }
         break;
@@ -302,7 +316,7 @@ class Environment {
         break;
       case 'var':
         for (const item of input) {
-          yield this.getVarValue(ast.name);
+          yield createItem(this.getVarValue(ast.name));
         }
         break;
       case 'varDeclaration':
@@ -314,7 +328,10 @@ class Environment {
             for (let i = 0; i < ast.destructuring.length; i++) {
               const destructuring = ast.destructuring[i];
               try {
-                for (const vars of this.destructureValue(val, destructuring)) {
+                for (const vars of this.destructureValue(
+                  val.value,
+                  destructuring
+                )) {
                   const scope = this.extend();
                   for (const varName of allVarNames) {
                     scope.setVar(varName, null);
@@ -356,7 +373,7 @@ class Environment {
         if (ast.operator === '-') {
           for (const item of input) {
             for (const val of this.evaluate(ast.expr, single(item))) {
-              yield -val;
+              yield createItem(-val.value);
             }
           }
           break;
@@ -367,10 +384,10 @@ class Environment {
         for (const item of input) {
           for (const val of this.evaluate(ast.expr, single(item))) {
             if (typeof ast.index === 'string') {
-              yield access(val, ast.index);
+              yield createItem(access(val.value, ast.index));
             } else {
               for (const index of this.evaluate(ast.index, single(item))) {
-                yield access(val, index);
+                yield createItem(access(val.value, index.value));
               }
             }
           }
@@ -385,18 +402,18 @@ class Environment {
             ? Array.from(this.evaluate(ast.to, single(item)))
             : [undefined];
           for (const val of this.evaluate(ast.expr, single(item))) {
-            if (!typeIsOneOf(val, Type.array, Type.string)) {
-              throw cannotSliceError(val);
+            if (!typeIsOneOf(val.value, Type.array, Type.string)) {
+              throw cannotSliceError(val.value);
             }
             for (const from of fromItems) {
-              if (from !== undefined && typeOf(from) !== Type.number) {
+              if (from !== undefined && typeOf(from.value) !== Type.number) {
                 throw invalidSliceIndicesError();
               }
               for (const to of toItems) {
-                if (to !== undefined && typeOf(to) !== Type.number) {
+                if (to !== undefined && typeOf(to.value) !== Type.number) {
                   throw invalidSliceIndicesError();
                 }
-                yield val.slice(from, to);
+                yield createItem(val.value.slice(from?.value, to?.value));
               }
             }
           }
@@ -405,15 +422,15 @@ class Environment {
       case 'iterator':
         for (const item of input) {
           for (const val of this.evaluate(ast.expr, single(item))) {
-            switch (typeOf(val)) {
+            switch (typeOf(val.value)) {
               case 'array':
-                yield* val;
+                yield* generateItems(val.value);
                 break;
               case 'object':
-                yield* Object.values(val);
+                yield* generateItems(Object.values(val.value));
                 break;
               default:
-                throw cannotIterateError(val);
+                throw cannotIterateError(val.value);
             }
           }
         }
@@ -421,31 +438,35 @@ class Environment {
       case 'array':
         for (const item of input) {
           if (ast.expr) {
-            yield Array.from(this.evaluate(ast.expr, single(item)));
+            yield createItem(
+              extractValues(this.evaluate(ast.expr, single(item)))
+            );
           } else {
-            yield [];
+            yield createItem([]);
           }
         }
         break;
       case 'object':
         for (const item of input) {
-          yield* generateObjects(
-            ast.entries.map(({ key, value }) => {
-              return [
-                typeof key === 'string'
-                  ? [key]
-                  : Array.from(this.evaluate(key, single(item))),
-                value === undefined
-                  ? [item[key]]
-                  : Array.from(this.evaluate(value, single(item))),
-              ];
-            })
+          yield* generateItems(
+            generateObjects(
+              ast.entries.map(({ key, value }) => {
+                return [
+                  typeof key === 'string'
+                    ? [key]
+                    : extractValues(this.evaluate(key, single(item))),
+                  value === undefined
+                    ? [item.value[key]]
+                    : extractValues(this.evaluate(value, single(item))),
+                ];
+              })
+            )
           );
         }
         break;
       case 'recursiveDescent':
         for (const item of input) {
-          yield* recursiveDescent(item);
+          yield* generateItems(recursiveDescent(item.value));
         }
         break;
     }
@@ -516,7 +537,9 @@ class Environment {
                 this.destructureValue(val[entry.key], entry.destructuring)
               );
             } else {
-              const keys = Array.from(this.evaluate(entry.key, single(val)));
+              const keys = extractValues(
+                this.evaluate(entry.key, single(createItem(val)))
+              );
               return keys
                 .map((key) =>
                   Array.from(

@@ -1,10 +1,10 @@
 import { parse } from '../parser/Parser';
 import { evaluate } from '../evaluate/evaluate';
-import { EvaluateInput, Output } from '../evaluate/utils';
+import { EvaluateInput, EvaluateOutput } from '../evaluate/utils';
 
 type JqFilterFunc<In = any, Out = unknown> = (
   input: EvaluateInput<In>
-) => Output<Out>;
+) => EvaluateOutput<Out>;
 
 export function jqTemplateTag<In = any, Out = unknown>(
   strings: TemplateStringsArray

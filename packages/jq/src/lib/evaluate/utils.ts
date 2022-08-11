@@ -2,9 +2,34 @@ import { JqEvaluateError } from '../errors';
 import { cannotIndexError } from './evaluateErrors';
 import { compare } from './compare';
 
-export type Input<T = any> = IterableIterator<T>;
-export type Output<T = any> = IterableIterator<T>;
-export type EvaluateInput<T = any> = Input<T> | T[];
+export type EvaluateInput<T = any> = IterableIterator<T> | T[];
+export type EvaluateOutput<T = any> = IterableIterator<T>;
+
+export interface Item<T = any> {
+  value: T;
+}
+
+export type ItemIterator<T = any> = IterableIterator<Item<T>>;
+
+export function createItem(value: any) {
+  return { value };
+}
+
+export function* generateItems(values: IterableIterator<any> | any[]) {
+  for (const value of values) {
+    yield createItem(value);
+  }
+}
+
+export function* generateValues(items: ItemIterator | Item[]) {
+  for (const item of items) {
+    yield item.value;
+  }
+}
+
+export function extractValues(items: ItemIterator | Item[]) {
+  return Array.from(generateValues(items));
+}
 
 export enum Type {
   null = 'null',
@@ -57,11 +82,6 @@ export function* single<T>(val: T): IterableIterator<T> {
 
 export function* many<T>(val: T[]): IterableIterator<T> {
   yield* val;
-}
-
-export function cloneGenerator<T extends Input>(iterator: T): [T, T] {
-  const values = Array.from(iterator);
-  return [many(values) as T, many(values) as T];
 }
 
 export type Path = (string | number)[];
