@@ -5,14 +5,36 @@ import { compare } from './compare';
 export type EvaluateInput<T = any> = IterableIterator<T> | T[];
 export type EvaluateOutput<T = any> = IterableIterator<T>;
 
+export type PathItem = string | number | SliceAccessor;
+export type Path = PathItem[];
+
+export type SliceAccessor = { start: number | null; end: number | null };
+export type NormalizedSliceAccessor = { start: number; end: number };
+
+export function createSliceAccessor(
+  start: number | null,
+  end: number | null
+): SliceAccessor {
+  return { start, end };
+}
+
+function isSliceAccessor(val: any): val is SliceAccessor {
+  return (
+    val &&
+    (val.start === null || Number.isInteger(val.start)) &&
+    (val.end === null || Number.isInteger(val.end))
+  );
+}
+
 export interface Item<T = any> {
   value: T;
+  path: Path;
 }
 
 export type ItemIterator<T = any> = IterableIterator<Item<T>>;
 
-export function createItem(value: any) {
-  return { value };
+export function createItem(value: any, path: Path = []) {
+  return { value, path };
 }
 
 export function* generateItems(values: IterableIterator<any> | any[]) {
@@ -27,7 +49,7 @@ export function* generateValues(items: ItemIterator | Item[]) {
   }
 }
 
-export function extractValues(items: ItemIterator | Item[]) {
+export function collectValues(items: ItemIterator | Item[]) {
   return Array.from(generateValues(items));
 }
 
@@ -84,12 +106,21 @@ export function* many<T>(val: T[]): IterableIterator<T> {
   yield* val;
 }
 
-export type Path = (string | number)[];
-
 export function isPath(val: any): val is Path {
   return (
     Array.isArray(val) &&
-    val.every((item) => typeof item === 'string' || Number.isInteger(item))
+    val.every((item: PathItem) => {
+      switch (typeof item) {
+        case 'string':
+          return true;
+        case 'number':
+          return Number.isInteger(item);
+        case 'object':
+          return isSliceAccessor(item);
+        default:
+          return false;
+      }
+    })
   );
 }
 
@@ -158,31 +189,94 @@ export function indices<T extends string | any[]>(
   return out;
 }
 
-export function access(val: any, index: string | number | any[]) {
+export function access(val: any, index: PathItem | any[]) {
   if (typesMatch(index, val, Type.number, Type.array)) {
-    const indexNum = index as number;
-    return val[indexNum < 0 ? val.length + indexNum : indexNum] ?? null;
+    return val[normalizeArrayIndex(val.length, index as number)] ?? null;
   } else if (typesMatch(index, val, Type.string, Type.object)) {
     return val[index as string] ?? null;
   } else if (typesMatch(index, val, Type.array, Type.array)) {
     return indices(val, index as any[]);
   } else if (
     typeOf(val) === Type.null &&
-    typeIsOneOf(index, Type.number, Type.string)
+    (typeIsOneOf(index, Type.number, Type.string) || isSliceAccessor(index))
   ) {
     return null;
+  } else if (
+    typeIsOneOf(val, Type.array, Type.string) &&
+    isSliceAccessor(index)
+  ) {
+    return val.slice(index.start ?? undefined, index.end ?? undefined);
   } else {
     throw cannotIndexError(val, index);
   }
 }
 
-export function getChildPaths(paths: Path[]): Record<string, Path[]> {
-  const out: Record<string, Path[]> = {};
-  for (const path of paths.filter((path) => path.length > 1)) {
-    if (!(path[0] in out)) out[path[0]] = [];
-    out[path[0]].push(path.slice(1));
+export function normalizeArrayIndex(arrayLength: number, index: number) {
+  return index < 0 ? arrayLength + index : index;
+}
+
+export function normalizeSliceAccessor(
+  arrayLength: number,
+  sliceAccessor: SliceAccessor
+): NormalizedSliceAccessor {
+  const { start, end } = sliceAccessor;
+  const newEnd = Math.max(
+    0,
+    Math.min(normalizeArrayIndex(arrayLength, end ?? arrayLength), arrayLength)
+  );
+  const newStart = Math.max(
+    0,
+    Math.min(normalizeArrayIndex(arrayLength, start ?? 0), newEnd)
+  );
+
+  return {
+    start: newStart,
+    end: newEnd,
+  };
+}
+
+// TODO test
+export function normalizeLeadingSliceAccessors(
+  arrayLength: number,
+  path: Path
+): Path {
+  if (!isSliceAccessor(path[0])) {
+    return path;
   }
 
+  let pos = 1;
+  let accessor: NormalizedSliceAccessor = normalizeSliceAccessor(
+    arrayLength,
+    path[0]
+  );
+  while (isSliceAccessor(path[pos])) {
+    arrayLength = accessor.end - accessor.start;
+    const next = normalizeSliceAccessor(arrayLength, path[pos] as any);
+    accessor = {
+      start: accessor.start + next.start,
+      end: accessor.start + next.end,
+    };
+    pos++;
+  }
+  if (pos < path.length) {
+    const next = path[pos];
+    if (typeof next !== 'number') {
+      throw cannotIndexError([], next);
+    }
+
+    return [accessor.start + next, ...path.slice(pos + 1)];
+  } else {
+    return [accessor];
+  }
+}
+
+function resolveNormalizedSliceAccessor(
+  accessor: NormalizedSliceAccessor
+): number[] {
+  const out = [];
+  for (let i = accessor.start; i < accessor.end; i++) {
+    out.push(i);
+  }
   return out;
 }
 
@@ -227,23 +321,59 @@ export function shallowClone<T>(value: T): T {
   }
 }
 
+export function getChildPaths(paths: Path[]): Record<string, Path[]> {
+  const out: Record<string, Path[]> = {};
+  for (const path of paths.filter((path) => path.length > 1)) {
+    const accessor = path[0];
+    if (isSliceAccessor(accessor)) {
+      // If this error is thrown, either the normalizeLeadingSliceAccessors
+      // function was not applied on each of the input paths,
+      // or it does not work properly
+      throw new JqEvaluateError(
+        'getChildPaths: Cannot handle paths that are longer than 1, and start in a slice accessor'
+      );
+    }
+
+    if (!(accessor in out)) out[accessor] = [];
+    out[accessor].push(path.slice(1));
+  }
+
+  return out;
+}
+
 export function delPaths(value: any, paths: Path[]) {
   if (paths.length === 0) return value;
   const type = typeOf(value);
   if (typeIsOneOf(value, Type.array, Type.object)) {
     let clone = shallowClone(value);
-    for (const path of paths) {
-      access(clone, path[0]);
+    const normalizedPaths = paths.map((path) =>
+      normalizeLeadingSliceAccessors(
+        typeOf(value) === Type.array ? value.length : 0,
+        path
+      )
+    );
+    for (const path of normalizedPaths) {
       if (path.length !== 1) continue;
-      if (path.length === 1 && path[0] in clone) {
-        const key = path[0];
-        delete clone[key];
+      const accessor = path[0];
+      access(clone, accessor);
+      if (isSliceAccessor(accessor)) {
+        const normalizedAccessor = normalizeSliceAccessor(
+          value.length,
+          accessor
+        );
+        for (const key of resolveNormalizedSliceAccessor(normalizedAccessor)) {
+          delete clone[key];
+        }
+      } else {
+        delete clone[accessor];
       }
     }
     if (type === Type.array)
       clone = clone.filter((item: any) => item !== undefined);
 
-    for (const [key, childPaths] of Object.entries(getChildPaths(paths))) {
+    for (const [key, childPaths] of Object.entries(
+      getChildPaths(normalizedPaths)
+    )) {
       if (key in clone) clone[key] = delPaths(clone[key], childPaths);
     }
     return clone;

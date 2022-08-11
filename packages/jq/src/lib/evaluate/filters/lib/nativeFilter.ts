@@ -1,9 +1,25 @@
 import { DefAst } from '../../../parser/AST';
+import { collectValues, generateItems, Item, ItemIterator } from '../../utils';
 
-export type NativeFilter = (
+export type NativeFilter = (input: Item, ...args: Item[]) => ItemIterator;
+export type BareNativeFilter = (
   input: any,
   ...args: any[]
 ) => IterableIterator<any>;
+
+export function wrapBareNativeFilters(
+  impls: Record<string, BareNativeFilter>
+): Record<string, NativeFilter> {
+  return Object.fromEntries(
+    Object.entries(impls).map(([key, bareFilter]) => {
+      return [
+        key,
+        (input: Item, ...args: Item[]) =>
+          generateItems(bareFilter(input.value, ...collectValues(args))),
+      ];
+    })
+  );
+}
 
 export function isNativeFilter(
   val: DefAst | NativeFilter

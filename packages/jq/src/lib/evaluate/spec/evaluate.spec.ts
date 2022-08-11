@@ -1326,6 +1326,16 @@ describe('evaluate', () => {
     it('.[] | select(.>3)', () => {
       expectCode('[1,2,3,4,5] | path(.[] | select(.>3))', [[3], [4]]);
     });
+    it('.[1:3] | select(.>3) | .[2]', () => {
+      expectCode('[1,2,3,4,5] | path(.[1:3] | select(.>3) | .[2])', [
+        [{ start: 1, end: 3 }, 2],
+      ]);
+    });
+    it('.[2:3][-2].a', () => {
+      expectCode('[1,2,3,4,5] | path(.[2:3][-2].a)', [
+        [{ start: 2, end: 3 }, -2, 'a'],
+      ]);
+    });
     it('1 | path(.)', () => {
       expectCode('1 | path(.)', [[]]);
     });

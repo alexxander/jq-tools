@@ -8,11 +8,13 @@ import {
 import { combineIterators, evaluateBooleanOperator } from './applyBinary';
 import {
   access,
+  collectValues,
   createItem,
+  createSliceAccessor,
   EvaluateInput,
   EvaluateOutput,
-  generateValues,
   generateItems,
+  generateValues,
   isAtom,
   isTrue,
   Item,
@@ -23,7 +25,6 @@ import {
   Type,
   typeIsOneOf,
   typeOf,
-  extractValues,
 } from './utils';
 import { generateObjects } from './generateObjects';
 import { generateCombinations } from './generateCombinations';
@@ -211,12 +212,10 @@ class Environment {
             const argSets: any[][] = [];
             for (let i = 0; i < arity; i++) {
               const argExprAst = ast.args[i];
-              argSets.push(
-                extractValues(this.evaluate(argExprAst, single(item)))
-              );
+              argSets.push(Array.from(this.evaluate(argExprAst, single(item))));
             }
             for (const combination of generateCombinations(argSets)) {
-              yield* generateItems(def.value(item.value, ...combination));
+              yield* def.value(item, ...combination);
             }
           } else {
             const argSets: ([ExpressionAst] | any[])[] = [];
@@ -226,7 +225,7 @@ class Environment {
               switch (argDefAst.type) {
                 case 'varArg':
                   argSets.push(
-                    extractValues(this.evaluate(argExprAst, single(item)))
+                    collectValues(this.evaluate(argExprAst, single(item)))
                   );
                   break;
                 case 'filterArg':
@@ -384,10 +383,16 @@ class Environment {
         for (const item of input) {
           for (const val of this.evaluate(ast.expr, single(item))) {
             if (typeof ast.index === 'string') {
-              yield createItem(access(val.value, ast.index));
+              yield createItem(access(val.value, ast.index), [
+                ...val.path,
+                ast.index,
+              ]);
             } else {
               for (const index of this.evaluate(ast.index, single(item))) {
-                yield createItem(access(val.value, index.value));
+                yield createItem(access(val.value, index.value), [
+                  ...val.path,
+                  index.value,
+                ]);
               }
             }
           }
@@ -413,7 +418,14 @@ class Environment {
                 if (to !== undefined && typeOf(to.value) !== Type.number) {
                   throw invalidSliceIndicesError();
                 }
-                yield createItem(val.value.slice(from?.value, to?.value));
+                const accessor = createSliceAccessor(
+                  from?.value ?? null,
+                  to?.value ?? null
+                );
+                yield createItem(access(val.value, accessor), [
+                  ...val.path,
+                  accessor,
+                ]);
               }
             }
           }
@@ -424,10 +436,14 @@ class Environment {
           for (const val of this.evaluate(ast.expr, single(item))) {
             switch (typeOf(val.value)) {
               case 'array':
-                yield* generateItems(val.value);
+                for (let i = 0; i < val.value.length; i++) {
+                  yield createItem(val.value[i], [...val.path, i]);
+                }
                 break;
               case 'object':
-                yield* generateItems(Object.values(val.value));
+                for (const [key, value] of Object.entries(val.value)) {
+                  yield createItem(value, [...val.path, key]);
+                }
                 break;
               default:
                 throw cannotIterateError(val.value);
@@ -439,7 +455,7 @@ class Environment {
         for (const item of input) {
           if (ast.expr) {
             yield createItem(
-              extractValues(this.evaluate(ast.expr, single(item)))
+              collectValues(this.evaluate(ast.expr, single(item)))
             );
           } else {
             yield createItem([]);
@@ -454,10 +470,10 @@ class Environment {
                 return [
                   typeof key === 'string'
                     ? [key]
-                    : extractValues(this.evaluate(key, single(item))),
+                    : collectValues(this.evaluate(key, single(item))),
                   value === undefined
                     ? [item.value[key]]
-                    : extractValues(this.evaluate(value, single(item))),
+                    : collectValues(this.evaluate(value, single(item))),
                 ];
               })
             )
@@ -537,7 +553,7 @@ class Environment {
                 this.destructureValue(val[entry.key], entry.destructuring)
               );
             } else {
-              const keys = extractValues(
+              const keys = collectValues(
                 this.evaluate(entry.key, single(createItem(val)))
               );
               return keys

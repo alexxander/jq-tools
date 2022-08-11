@@ -92,6 +92,33 @@ describe('builtins', () => {
       it('array', () => {
         expectCode('[0,1,2,3,4,5] | delpaths([[3], [4]])', [[0, 1, 2, 5]]);
       });
+      describe('slice', () => {
+        it('simple', () => {
+          expectCode('[0,1,2,3,4,5] | delpaths([[{start:1, end: 4}]])', [
+            [0, 4, 5],
+          ]);
+        });
+        describe('nested slice', () => {
+          it('smaller', () => {
+            expectCode(
+              '[0,1,2,3,4,5,6,7,8,9,10] | delpaths([[{start:1,end:7}, {start:1,end:3}]])',
+              [[0, 1, 4, 5, 6, 7, 8, 9, 10]]
+            );
+          });
+          it('larger', () => {
+            expectCode(
+              '[0,1,2,3,4,5,6,7,8,9,10] | delpaths([[{start:1,end:7}, {start:1,end:10}]])',
+              [[0, 1, 7, 8, 9, 10]]
+            );
+          });
+        });
+        it('nested indexes', () => {
+          expectCode(
+            '[0,1,2,3,4,5] | delpaths([[{start:1, end: 4}, 0], [{start:1, end: 4}, 2]])',
+            [[0, 2, 4, 5]]
+          );
+        });
+      });
       it('deep', () => {
         expectCode(
           '{a:{b:{c:[5, {d:1, e:2}]}}, f:3, g:4} | delpaths([["a","b","c", 1,"d"]])',
@@ -1026,11 +1053,14 @@ describe('builtins', () => {
     //     throw notImplementedError('combinations/1');
     //   });
     // });
-    // describe('del/1', () => {
-    //   it('del/1', () => {
-    //     throw notImplementedError('del/1');
-    //   });
-    // });
+    describe('del/1', () => {
+      it('object', () => {
+        expectCode('{a:1,b:2,c:3} | del(.a)', [{ b: 2, c: 3 }]);
+      });
+      it('array', () => {
+        expectCode('[0,1,2,3,4,5,6,7] | del(.[2,5,3,7])', [[0, 1, 4, 6]]);
+      });
+    });
     // describe('error/1', () => {
     //   it('error/1', () => {
     //     throw notImplementedError('error/1');
