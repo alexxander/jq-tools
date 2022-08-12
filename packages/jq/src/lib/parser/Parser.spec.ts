@@ -478,6 +478,108 @@ describe('parse', () => {
           expectPrint('(def f: .; .) | .');
         });
       });
+
+      describe('//', () => {
+        testPrintAndParse('null // .', 'null//.', {
+          expr: {
+            left: { type: 'null', value: null },
+            operator: '//',
+            right: { type: 'identity' },
+            type: 'binary',
+          },
+          type: 'root',
+        });
+      });
+      describe('assignment', () => {
+        describe('=', () => {
+          testPrintAndParse('. = .', '.=.', {
+            expr: {
+              left: { type: 'identity' },
+              operator: '=',
+              right: { type: 'identity' },
+              type: 'binary',
+            },
+            type: 'root',
+          });
+        });
+        describe('|=', () => {
+          testPrintAndParse('. |= .', '.|=.', {
+            expr: {
+              left: { type: 'identity' },
+              operator: '|=',
+              right: { type: 'identity' },
+              type: 'binary',
+            },
+            type: 'root',
+          });
+        });
+        describe('+=', () => {
+          testPrintAndParse('. += .', '.+=.', {
+            expr: {
+              left: { type: 'identity' },
+              operator: '+=',
+              right: { type: 'identity' },
+              type: 'binary',
+            },
+            type: 'root',
+          });
+        });
+        describe('-=', () => {
+          testPrintAndParse('. -= .', '.-=.', {
+            expr: {
+              left: { type: 'identity' },
+              operator: '-=',
+              right: { type: 'identity' },
+              type: 'binary',
+            },
+            type: 'root',
+          });
+        });
+        describe('*=', () => {
+          testPrintAndParse('. *= .', '.*=.', {
+            expr: {
+              left: { type: 'identity' },
+              operator: '*=',
+              right: { type: 'identity' },
+              type: 'binary',
+            },
+            type: 'root',
+          });
+        });
+        describe('/=', () => {
+          testPrintAndParse('. /= .', './=.', {
+            expr: {
+              left: { type: 'identity' },
+              operator: '/=',
+              right: { type: 'identity' },
+              type: 'binary',
+            },
+            type: 'root',
+          });
+        });
+        describe('%=', () => {
+          testPrintAndParse('. %= .', '.%=.', {
+            expr: {
+              left: { type: 'identity' },
+              operator: '%=',
+              right: { type: 'identity' },
+              type: 'binary',
+            },
+            type: 'root',
+          });
+        });
+        describe('//=', () => {
+          testPrintAndParse('. //= .', './/=.', {
+            expr: {
+              left: { type: 'identity' },
+              operator: '//=',
+              right: { type: 'identity' },
+              type: 'binary',
+            },
+            type: 'root',
+          });
+        });
+      });
     });
     describe('bool', () => {
       testPrintAndParse('false and true or true and false | not', {

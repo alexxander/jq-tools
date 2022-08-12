@@ -2,7 +2,7 @@
 import * as readline from 'readline';
 import { parse } from '../lib/parser/Parser';
 import { evaluate } from '../lib/evaluate/evaluate';
-import { single } from '../lib/evaluate/utils';
+import { single } from '../lib/evaluate/utils/utils';
 
 const code = process.argv[2];
 const ast = parse(code);

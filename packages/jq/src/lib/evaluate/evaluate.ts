@@ -5,15 +5,22 @@ import {
   ForeachAst,
   ProgAst,
 } from '../parser/AST';
-import { combineIterators, evaluateBooleanOperator } from './applyBinary';
+import {
+  evaluateArithmeticUpdateAssignment,
+  evaluateBooleanOperator,
+  evaluateNormalBinaryOperator,
+  evaluateSimpleAssignment,
+} from './applyBinary';
 import {
   access,
   collectValues,
   createItem,
   createSliceAccessor,
+  deepClone,
   EvaluateInput,
   EvaluateOutput,
   generateItems,
+  generatePaths,
   generateValues,
   isAtom,
   isTrue,
@@ -25,7 +32,7 @@ import {
   Type,
   typeIsOneOf,
   typeOf,
-} from './utils';
+} from './utils/utils';
 import { generateObjects } from './generateObjects';
 import { generateCombinations } from './generateCombinations';
 import { JqEvaluateError } from '../errors';
@@ -33,8 +40,18 @@ import { applyFormat } from './applyFormat';
 import { builtinNativeFilters } from './filters/builtinNativeFilters';
 import { Parser } from '../parser/Parser';
 import { isNativeFilter, NativeFilter } from './filters/lib/nativeFilter';
-import { notDefinedError, notImplementedError } from './evaluateErrors';
+import {
+  cannotSliceError,
+  notDefinedError,
+  notImplementedError,
+} from './evaluateErrors';
 import { builtinJqFilters } from './filters/builtinJqFilters';
+import { setPath } from './utils/setPath';
+import {
+  BinaryOperatorType,
+  isBinaryOperatorType,
+} from './utils/binaryOperator';
+import { getPath } from './utils/getPath';
 
 interface Var<T = any> {
   scope: Environment | null;
@@ -44,10 +61,6 @@ interface Var<T = any> {
 function cannotIterateError(value: any) {
   const preview = isAtom(value) ? ` "${value}"` : '';
   return new JqEvaluateError(`${typeOf(value)}${preview} is not iterable`);
-}
-
-function cannotSliceError(val: any) {
-  return new JqEvaluateError(`Cannot slice ${typeOf(val)}`);
 }
 
 function invalidSliceIndicesError() {
@@ -155,13 +168,46 @@ class Environment {
         for (const item of input) {
           const left = this.evaluate(ast.left, single(item));
           const right = this.evaluate(ast.right, single(item));
-          if (ast.operator === ',') {
+          if (isBinaryOperatorType(ast.operator, BinaryOperatorType.comma)) {
             yield* left;
             yield* right;
-          } else if (ast.operator === 'or' || ast.operator === 'and') {
+          } else if (
+            isBinaryOperatorType(ast.operator, BinaryOperatorType.boolean)
+          ) {
             yield* evaluateBooleanOperator(ast.operator, left, right);
+          } else if (
+            isBinaryOperatorType(ast.operator, BinaryOperatorType.normal)
+          ) {
+            yield* evaluateNormalBinaryOperator(ast.operator, left, right);
+          } else if (
+            isBinaryOperatorType(ast.operator, BinaryOperatorType.assignment)
+          ) {
+            if (ast.operator === '|=') {
+              let out = item.value;
+              for (const path of generatePaths(left)) {
+                let newValue = undefined;
+                for (const valItem of this.evaluate(
+                  ast.right,
+                  single(createItem(getPath(item.value, path)))
+                )) {
+                  newValue = deepClone(valItem.value);
+                  break;
+                }
+                out = setPath(out, path, newValue);
+              }
+              yield createItem(out);
+            } else if (ast.operator === '=') {
+              yield* evaluateSimpleAssignment(item, left, right);
+            } else {
+              yield* evaluateArithmeticUpdateAssignment(
+                ast.operator,
+                item,
+                left,
+                right
+              );
+            }
           } else {
-            yield* combineIterators(ast.operator, left, right);
+            throw new JqEvaluateError(`Unexpected operator ${ast.operator}`);
           }
         }
         break;
@@ -407,7 +453,7 @@ class Environment {
             ? Array.from(this.evaluate(ast.to, single(item)))
             : [undefined];
           for (const val of this.evaluate(ast.expr, single(item))) {
-            if (!typeIsOneOf(val.value, Type.array, Type.string)) {
+            if (!typeIsOneOf(val.value, Type.array, Type.string, Type.null)) {
               throw cannotSliceError(val.value);
             }
             for (const from of fromItems) {

@@ -1,4 +1,4 @@
-import { Type, typeOf } from './utils';
+import { Type, typeOf } from './utils/utils';
 
 const typesOrder: Record<Type, number> = {
   null: 0,

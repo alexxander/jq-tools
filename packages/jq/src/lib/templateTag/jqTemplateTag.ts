@@ -1,6 +1,6 @@
 import { parse } from '../parser/Parser';
 import { evaluate } from '../evaluate/evaluate';
-import { EvaluateInput, EvaluateOutput } from '../evaluate/utils';
+import { EvaluateInput, EvaluateOutput } from '../evaluate/utils/utils';
 
 type JqFilterFunc<In = any, Out = unknown> = (
   input: EvaluateInput<In>

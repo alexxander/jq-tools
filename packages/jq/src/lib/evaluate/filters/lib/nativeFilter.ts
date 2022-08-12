@@ -1,5 +1,10 @@
 import { DefAst } from '../../../parser/AST';
-import { collectValues, generateItems, Item, ItemIterator } from '../../utils';
+import {
+  collectValues,
+  generateItems,
+  Item,
+  ItemIterator,
+} from '../../utils/utils';
 
 export type NativeFilter = (input: Item, ...args: Item[]) => ItemIterator;
 export type BareNativeFilter = (

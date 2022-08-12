@@ -96,12 +96,7 @@ exports[`evaluate operators binary assignment = wierd cases null | true = 5 1`] 
 
 exports[`evaluate operators binary assignment = wierd cases true | false = 5 1`] = `"Feature 'operator:=' is not implemented"`;
 
-exports[`evaluate operators binary assignment error [1] | "" *= 10 1`] = `
-"Unexpected operator: \\"=\\" (1:10)
-
-[1] | \\"\\" *= 10
-----------^"
-`;
+exports[`evaluate operators binary assignment error [1] | "" *= 10 1`] = `"Operator * cannot be applied to array and number"`;
 
 exports[`evaluate operators binary assignment error [1] | "" = 10 1`] = `"Feature 'operator:=' is not implemented"`;
 
@@ -111,12 +106,7 @@ exports[`evaluate operators binary assignment error [1] | .[0].b = 10 1`] = `"Ca
 
 exports[`evaluate operators binary assignment error [1] | .a.b = 10 1`] = `"Cannot index array with string"`;
 
-exports[`evaluate operators binary assignment error [1] | 0 *= 10 1`] = `
-"Unexpected operator: \\"=\\" (1:9)
-
-[1] | 0 *= 10
----------^"
-`;
+exports[`evaluate operators binary assignment error [1] | 0 *= 10 1`] = `"Operator * cannot be applied to array and number"`;
 
 exports[`evaluate operators binary assignment error [1] | 0 = 10 1`] = `"Feature 'operator:=' is not implemented"`;
 
@@ -124,19 +114,9 @@ exports[`evaluate operators binary assignment error [1] | 0 |= 10 1`] = `"Featur
 
 exports[`evaluate operators binary assignment error [1] as $var | $var = 10 1`] = `"Feature 'operator:=' is not implemented"`;
 
-exports[`evaluate operators binary assignment error [1] as $var | $var[0] *= 10 1`] = `
-"Unexpected operator: \\"=\\" (1:23)
+exports[`evaluate operators binary assignment error [1] as $var | $var[0] *= 10 1`] = `"Operator * cannot be applied to null and number"`;
 
-[1] as $var | $var[0] *= 10
------------------------^"
-`;
-
-exports[`evaluate operators binary assignment error {a:1} | "" *= 10 1`] = `
-"Unexpected operator: \\"=\\" (1:12)
-
-{a:1} | \\"\\" *= 10
-------------^"
-`;
+exports[`evaluate operators binary assignment error {a:1} | "" *= 10 1`] = `"Operator * cannot be applied to object and number"`;
 
 exports[`evaluate operators binary assignment error {a:1} | "" = 10 1`] = `"Feature 'operator:=' is not implemented"`;
 
@@ -144,12 +124,7 @@ exports[`evaluate operators binary assignment error {a:1} | "" |= 10 1`] = `"Fea
 
 exports[`evaluate operators binary assignment error {a:1} | .a.b = 10 1`] = `"Cannot index number with string"`;
 
-exports[`evaluate operators binary assignment error {a:1} | 0 *= 10 1`] = `
-"Unexpected operator: \\"=\\" (1:11)
-
-{a:1} | 0 *= 10
------------^"
-`;
+exports[`evaluate operators binary assignment error {a:1} | 0 *= 10 1`] = `"Operator * cannot be applied to object and number"`;
 
 exports[`evaluate operators binary assignment error {a:1} | 0 = 10 1`] = `"Feature 'operator:=' is not implemented"`;
 
@@ -157,12 +132,7 @@ exports[`evaluate operators binary assignment error {a:1} | 0 |= 10 1`] = `"Feat
 
 exports[`evaluate operators binary assignment error {a:1} as $var | $var = 10 1`] = `"Feature 'operator:=' is not implemented"`;
 
-exports[`evaluate operators binary assignment error {a:1} as $var | $var.a *= 10 1`] = `
-"Unexpected operator: \\"=\\" (1:24)
-
-{a:1} as $var | $var.a *= 10
-------------------------^"
-`;
+exports[`evaluate operators binary assignment error {a:1} as $var | $var.a *= 10 1`] = `"Operator * cannot be applied to null and number"`;
 
 exports[`evaluate operators binary boolean errors false or error("ERROR") 1`] = `"Feature 'error/0' is not implemented"`;
 
@@ -296,16 +266,14 @@ exports[`evaluate slice cannot slice false[false:] 1`] = `"Cannot slice boolean"
 
 exports[`evaluate slice cannot slice false[null:] 1`] = `"Cannot slice boolean"`;
 
-exports[`evaluate slice cannot slice null["":] 1`] = `"Cannot slice null"`;
+exports[`evaluate slice cannot slice null["":] 1`] = `"Array slice indices must be numbers"`;
 
-exports[`evaluate slice cannot slice null[[]:] 1`] = `"Cannot slice null"`;
+exports[`evaluate slice cannot slice null[[]:] 1`] = `"Array slice indices must be numbers"`;
 
-exports[`evaluate slice cannot slice null[{}:] 1`] = `"Cannot slice null"`;
+exports[`evaluate slice cannot slice null[{}:] 1`] = `"Array slice indices must be numbers"`;
 
-exports[`evaluate slice cannot slice null[0:] 1`] = `"Cannot slice null"`;
+exports[`evaluate slice cannot slice null[false:] 1`] = `"Array slice indices must be numbers"`;
 
-exports[`evaluate slice cannot slice null[false:] 1`] = `"Cannot slice null"`;
-
-exports[`evaluate slice cannot slice null[null:] 1`] = `"Cannot slice null"`;
+exports[`evaluate slice cannot slice null[null:] 1`] = `"Array slice indices must be numbers"`;
 
 exports[`evaluate variables destructuring destructuring alternative operator error 1`] = `"number cannot be destructured as an object"`;

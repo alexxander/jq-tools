@@ -139,20 +139,8 @@ export interface ForeachAst {
   extract?: ExpressionAst;
 }
 
-export type BinaryOperator =
-  | '|'
-  | ','
+export type NormalBinaryOperator =
   | '//'
-  | '='
-  | '|='
-  | '+='
-  | '-='
-  | '*='
-  | '/='
-  | '%='
-  | '//='
-  | 'or'
-  | 'and'
   | '=='
   | '!='
   | '<'
@@ -163,8 +151,27 @@ export type BinaryOperator =
   | '-'
   | '*'
   | '/'
-  | '%'
-  | '?//';
+  | '%';
+export type AssignmentOperator =
+  | '='
+  | '|='
+  | '+='
+  | '-='
+  | '*='
+  | '/='
+  | '%='
+  | '//=';
+export type BooleanBinaryOperator = 'or' | 'and';
+export type PipeOperator = '|';
+export type CommaOperator = ',';
+export type DestructuringAlternativeOperator = '?//';
+export type BinaryOperator =
+  | NormalBinaryOperator
+  | AssignmentOperator
+  | BooleanBinaryOperator
+  | PipeOperator
+  | CommaOperator
+  | DestructuringAlternativeOperator;
 
 export interface BinaryAst {
   type: 'binary';

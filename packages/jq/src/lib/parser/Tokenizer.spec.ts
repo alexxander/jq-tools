@@ -157,4 +157,137 @@ describe('Tokenizer', () => {
       ]);
     });
   });
+
+  it('operators', () => {
+    const tokenizer = new Tokenizer(
+      new InputStream(
+        `.|., .//., .=., .|=., .+=., .-=., .*=., ./=., .%=., .//=., .or., .and., .==., .!=., .<., .>., .<=., .>=., .+., .-., .*., ./., .%., .as[$a]?//$b`
+      )
+    );
+
+    expect(tokenizer.toArray()).toEqual([
+      { type: 'op', value: '.' },
+      { type: 'op', value: '|' },
+      { type: 'op', value: '.' },
+      { type: 'op', value: ',' },
+
+      { type: 'op', value: '.' },
+      { type: 'op', value: '//' },
+      { type: 'op', value: '.' },
+      { type: 'op', value: ',' },
+
+      { type: 'op', value: '.' },
+      { type: 'op', value: '=' },
+      { type: 'op', value: '.' },
+      { type: 'op', value: ',' },
+
+      { type: 'op', value: '.' },
+      { type: 'op', value: '|=' },
+      { type: 'op', value: '.' },
+      { type: 'op', value: ',' },
+
+      { type: 'op', value: '.' },
+      { type: 'op', value: '+=' },
+      { type: 'op', value: '.' },
+      { type: 'op', value: ',' },
+
+      { type: 'op', value: '.' },
+      { type: 'op', value: '-=' },
+      { type: 'op', value: '.' },
+      { type: 'op', value: ',' },
+
+      { type: 'op', value: '.' },
+      { type: 'op', value: '*=' },
+      { type: 'op', value: '.' },
+      { type: 'op', value: ',' },
+
+      { type: 'op', value: '.' },
+      { type: 'op', value: '/=' },
+      { type: 'op', value: '.' },
+      { type: 'op', value: ',' },
+
+      { type: 'op', value: '.' },
+      { type: 'op', value: '%=' },
+      { type: 'op', value: '.' },
+      { type: 'op', value: ',' },
+
+      { type: 'op', value: '.' },
+      { type: 'op', value: '//=' },
+      { type: 'op', value: '.' },
+      { type: 'op', value: ',' },
+
+      { type: 'op', value: '.' },
+      { type: 'kw', value: 'or' },
+      { type: 'op', value: '.' },
+      { type: 'op', value: ',' },
+
+      { type: 'op', value: '.' },
+      { type: 'kw', value: 'and' },
+      { type: 'op', value: '.' },
+      { type: 'op', value: ',' },
+
+      { type: 'op', value: '.' },
+      { type: 'op', value: '==' },
+      { type: 'op', value: '.' },
+      { type: 'op', value: ',' },
+
+      { type: 'op', value: '.' },
+      { type: 'op', value: '!=' },
+      { type: 'op', value: '.' },
+      { type: 'op', value: ',' },
+
+      { type: 'op', value: '.' },
+      { type: 'op', value: '<' },
+      { type: 'op', value: '.' },
+      { type: 'op', value: ',' },
+
+      { type: 'op', value: '.' },
+      { type: 'op', value: '>' },
+      { type: 'op', value: '.' },
+      { type: 'op', value: ',' },
+
+      { type: 'op', value: '.' },
+      { type: 'op', value: '<=' },
+      { type: 'op', value: '.' },
+      { type: 'op', value: ',' },
+
+      { type: 'op', value: '.' },
+      { type: 'op', value: '>=' },
+      { type: 'op', value: '.' },
+      { type: 'op', value: ',' },
+
+      { type: 'op', value: '.' },
+      { type: 'op', value: '+' },
+      { type: 'op', value: '.' },
+      { type: 'op', value: ',' },
+
+      { type: 'op', value: '.' },
+      { type: 'op', value: '-' },
+      { type: 'op', value: '.' },
+      { type: 'op', value: ',' },
+
+      { type: 'op', value: '.' },
+      { type: 'op', value: '*' },
+      { type: 'op', value: '.' },
+      { type: 'op', value: ',' },
+
+      { type: 'op', value: '.' },
+      { type: 'op', value: '/' },
+      { type: 'op', value: '.' },
+      { type: 'op', value: ',' },
+
+      { type: 'op', value: '.' },
+      { type: 'op', value: '%' },
+      { type: 'op', value: '.' },
+      { type: 'op', value: ',' },
+
+      { type: 'op', value: '.' },
+      { type: 'kw', value: 'as' },
+      { type: 'punc', value: '[' },
+      { type: 'var', value: '$a' },
+      { type: 'punc', value: ']' },
+      { type: 'op', value: '?//' },
+      { type: 'var', value: '$b' },
+    ]);
+  });
 });

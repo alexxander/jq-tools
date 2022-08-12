@@ -1,7 +1,15 @@
-import { BinaryOperator } from '../parser/AST';
+import {
+  AssignmentOperator,
+  BinaryOperator,
+  BooleanBinaryOperator,
+  NormalBinaryOperator,
+} from '../parser/AST';
 import {
   createItem,
+  deepClone,
   deepMerge,
+  generatePaths,
+  generateValues,
   isTrue,
   Item,
   ItemIterator,
@@ -12,10 +20,12 @@ import {
   typesEqual,
   typesMatch,
   typesMatchCommutative,
-} from './utils';
+} from './utils/utils';
 import { compare } from './compare';
 import { JqEvaluateError } from '../errors';
-import { notImplementedError } from './evaluateErrors';
+import { setPath } from './utils/setPath';
+import { combineIterators, nestedIterators } from './utils/nestedIterators';
+import { getPath } from './utils/getPath';
 
 function cannotApplyOperatorToError(op: BinaryOperator, left: any, right: any) {
   return new JqEvaluateError(
@@ -31,118 +41,139 @@ function divisionByZeroError() {
   return new JqEvaluateError('Division by zero');
 }
 
-function applyBinary(op: BinaryOperator, left: Item, right: Item): Item {
+export function applyNormalBinaryOperator(
+  op: NormalBinaryOperator,
+  left: any,
+  right: any
+): any {
   switch (op) {
     case '//':
-      return isTrue(left.value) ? left : right;
-    case '=':
-      throw notImplementedError('operator:' + op);
-    case '|=':
-      throw notImplementedError('operator:' + op);
-    case '+=':
-      throw notImplementedError('operator:' + op);
-    case '-=':
-      throw notImplementedError('operator:' + op);
-    case '*=':
-      throw notImplementedError('operator:' + op);
-    case '/=':
-      throw notImplementedError('operator:' + op);
-    case '%=':
-      throw notImplementedError('operator:' + op);
-    case '//=':
-      throw notImplementedError('operator:' + op);
+      return isTrue(left) ? left : right;
     case '==':
-      return createItem(compare(left.value, right.value) === 0);
+      return compare(left, right) === 0;
     case '!=':
-      return createItem(compare(left.value, right.value) !== 0);
+      return compare(left, right) !== 0;
     case '<':
-      return createItem(compare(left.value, right.value) < 0);
+      return compare(left, right) < 0;
     case '>':
-      return createItem(compare(left.value, right.value) > 0);
+      return compare(left, right) > 0;
     case '<=':
-      return createItem(compare(left.value, right.value) <= 0);
+      return compare(left, right) <= 0;
     case '>=':
-      return createItem(compare(left.value, right.value) >= 0);
+      return compare(left, right) >= 0;
     case '+':
-      if (someOfType(Type.null, left.value, right.value)) {
-        return typeOf(left.value) === Type.null ? right : left;
+      if (someOfType(Type.null, left, right)) {
+        return typeOf(left) === Type.null ? right : left;
       }
 
-      if (!typesEqual(left.value, right.value)) {
-        throw cannotApplyOperatorToError(op, left.value, right.value);
+      if (!typesEqual(left, right)) {
+        throw cannotApplyOperatorToError(op, left, right);
       }
-      switch (typeOf(left.value)) {
+      switch (typeOf(left)) {
         case Type.string:
         case Type.number:
-          return createItem(left.value + right.value);
+          return left + right;
         case Type.array:
-          return createItem([...left.value, ...right.value]);
+          return [...left, ...right];
         case Type.object:
-          return createItem({ ...left.value, ...right.value });
+          return { ...left, ...right };
         default:
-          throw cannotApplyOperatorToError(op, left.value, right.value);
+          throw cannotApplyOperatorToError(op, left, right);
       }
     case '-':
-      if (!typesEqual(left.value, right.value)) {
-        throw cannotApplyOperatorToError(op, left.value, right.value);
+      if (!typesEqual(left, right)) {
+        throw cannotApplyOperatorToError(op, left, right);
       }
-      switch (typeOf(left.value)) {
+      switch (typeOf(left)) {
         case Type.number:
-          return createItem(left.value - right.value);
+          return left - right;
         case Type.array:
           // Set subtraction
-          return createItem(
-            left.value.filter(
-              (leftItem: any) =>
-                !right.value.some(
-                  (rightItem: any) => compare(leftItem, rightItem) === 0
-                )
-            )
+          return left.filter(
+            (leftItem: any) =>
+              !right.some(
+                (rightItem: any) => compare(leftItem, rightItem) === 0
+              )
           );
         default:
-          throw cannotApplyOperatorToError(op, left.value, right.value);
+          throw cannotApplyOperatorToError(op, left, right);
       }
     case '*':
-      if (typesMatch(left.value, right.value, Type.number)) {
-        return createItem(left.value * right.value);
-      } else if (
-        typesMatchCommutative(left.value, right.value, Type.string, Type.number)
-      ) {
-        const str =
-          typeOf(left.value) === Type.string ? left.value : right.value;
-        const num =
-          typeOf(left.value) === Type.number ? left.value : right.value;
-        return createItem(repeatString(str, num));
-      } else if (typesMatch(left.value, right.value, Type.object)) {
-        return createItem(deepMerge(left.value, right.value));
+      if (typesMatch(left, right, Type.number)) {
+        return left * right;
+      } else if (typesMatchCommutative(left, right, Type.string, Type.number)) {
+        const str = typeOf(left) === Type.string ? left : right;
+        const num = typeOf(left) === Type.number ? left : right;
+        return repeatString(str, num);
+      } else if (typesMatch(left, right, Type.object)) {
+        return deepMerge(left, right);
       }
-      throw cannotApplyOperatorToError(op, left.value, right.value);
+      throw cannotApplyOperatorToError(op, left, right);
     case '/':
-      if (typesMatch(left.value, right.value, Type.number)) {
-        if (right.value === 0) throw divisionByZeroError();
-        return createItem(left.value / right.value);
-      } else if (typesMatch(left.value, right.value, Type.string)) {
-        return createItem(left.value.split(right.value));
+      if (typesMatch(left, right, Type.number)) {
+        if (right === 0) throw divisionByZeroError();
+        return left / right;
+      } else if (typesMatch(left, right, Type.string)) {
+        return left.split(right);
       }
-      throw cannotApplyOperatorToError(op, left.value, right.value);
+      throw cannotApplyOperatorToError(op, left, right);
     case '%':
-      if (typesMatch(left.value, right.value, Type.number)) {
-        if (Math.floor(right.value) === 0) throw divisionByZeroError();
-        return createItem(Math.floor(left.value) % Math.floor(right.value));
+      if (typesMatch(left, right, Type.number)) {
+        if (Math.floor(right) === 0) throw divisionByZeroError();
+        return Math.floor(left) % Math.floor(right);
       }
-      throw cannotApplyOperatorToError(op, left.value, right.value);
-    case 'or':
-    case 'and':
-    case '?//':
-    case '|':
-    case ',':
+      throw cannotApplyOperatorToError(op, left, right);
     default:
       throw cannotApplyOperator(op);
   }
 }
 
+export function* evaluateSimpleAssignment(
+  inputItem: Item,
+  left: ItemIterator,
+  right: ItemIterator
+): ItemIterator {
+  for (const [value, pathIterator] of nestedIterators(
+    generateValues(right),
+    generatePaths(left)
+  )) {
+    let out = inputItem.value;
+    for (const path of pathIterator) {
+      out = setPath(out, path, deepClone(value));
+    }
+    yield createItem(out);
+  }
+}
+
+export function* evaluateArithmeticUpdateAssignment(
+  op: AssignmentOperator,
+  inputItem: Item,
+  left: ItemIterator,
+  right: ItemIterator
+): ItemIterator {
+  for (const [value, pathIterator] of nestedIterators(
+    generateValues(right),
+    generatePaths(left)
+  )) {
+    let out = inputItem.value;
+    for (const path of pathIterator) {
+      out = setPath(
+        out,
+        path,
+        applyNormalBinaryOperator(
+          // Remove the '=' sign from the original arithmetic update-assignment operator
+          op.slice(0, -1) as any,
+          getPath(out, path),
+          value
+        )
+      );
+    }
+    yield createItem(out);
+  }
+}
+
 export function* evaluateBooleanOperator(
-  op: 'and' | 'or',
+  op: BooleanBinaryOperator,
   left: ItemIterator,
   right: ItemIterator
 ): ItemIterator {
@@ -172,19 +203,14 @@ export function* evaluateBooleanOperator(
   }
 }
 
-export function* combineIterators(
-  op: BinaryOperator,
+export function* evaluateNormalBinaryOperator(
+  op: NormalBinaryOperator,
   left: ItemIterator,
   right: ItemIterator
-) {
-  let first = true;
-  const memorizedLeftItems: Item[] = [];
-  for (const rightItem of right) {
-    const leftItems = first ? left : memorizedLeftItems;
-    for (const leftItem of leftItems) {
-      if (first) memorizedLeftItems.push(leftItem);
-      yield applyBinary(op, leftItem, rightItem);
-    }
-    first = false;
+): ItemIterator {
+  for (const [rightItem, leftItem] of combineIterators(right, left)) {
+    yield createItem(
+      applyNormalBinaryOperator(op, leftItem.value, rightItem.value)
+    );
   }
 }

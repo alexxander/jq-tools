@@ -1,6 +1,6 @@
-import { JqEvaluateError } from '../errors';
-import { cannotIndexError } from './evaluateErrors';
-import { compare } from './compare';
+import { JqEvaluateError } from '../../errors';
+import { cannotIndexError, cannotSliceError } from '../evaluateErrors';
+import { compare } from '../compare';
 
 export type EvaluateInput<T = any> = IterableIterator<T> | T[];
 export type EvaluateOutput<T = any> = IterableIterator<T>;
@@ -18,7 +18,7 @@ export function createSliceAccessor(
   return { start, end };
 }
 
-function isSliceAccessor(val: any): val is SliceAccessor {
+export function isSliceAccessor(val: any): val is SliceAccessor {
   return (
     val &&
     (val.start === null || Number.isInteger(val.start)) &&
@@ -46,6 +46,12 @@ export function* generateItems(values: IterableIterator<any> | any[]) {
 export function* generateValues(items: ItemIterator | Item[]) {
   for (const item of items) {
     yield item.value;
+  }
+}
+
+export function* generatePaths(items: ItemIterator | Item[]) {
+  for (const item of items) {
+    yield item.path;
   }
 }
 
@@ -207,6 +213,9 @@ export function access(val: any, index: PathItem | any[]) {
   ) {
     return val.slice(index.start ?? undefined, index.end ?? undefined);
   } else {
+    if (isSliceAccessor(index)) {
+      throw cannotSliceError(val);
+    }
     throw cannotIndexError(val, index);
   }
 }
@@ -235,13 +244,16 @@ export function normalizeSliceAccessor(
   };
 }
 
+type PathWithNormalizedLeadingSliceAccessors =
+  | [Exclude<PathItem, SliceAccessor>, ...Path]
+  | [NormalizedSliceAccessor];
 // TODO test
 export function normalizeLeadingSliceAccessors(
   arrayLength: number,
   path: Path
-): Path {
+): PathWithNormalizedLeadingSliceAccessors {
   if (!isSliceAccessor(path[0])) {
-    return path;
+    return path as any;
   }
 
   let pos = 1;
@@ -270,7 +282,7 @@ export function normalizeLeadingSliceAccessors(
   }
 }
 
-function resolveNormalizedSliceAccessor(
+export function resolveNormalizedSliceAccessor(
   accessor: NormalizedSliceAccessor
 ): number[] {
   const out = [];

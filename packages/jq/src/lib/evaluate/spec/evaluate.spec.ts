@@ -248,7 +248,6 @@ describe('evaluate', () => {
     describe('cannot slice', () => {
       testCodeError('null[null:]');
       testCodeError('null[false:]');
-      testCodeError('null[0:]');
       testCodeError('null["":]');
       testCodeError('null[[]:]');
       testCodeError('null[{}:]');
@@ -1166,7 +1165,21 @@ describe('evaluate', () => {
             testCode('{a: {b:1},b:2} | (.a.b,.b) = .', [
               { a: { b: { a: { b: 1 }, b: 2 } }, b: { a: { b: 1 }, b: 2 } },
             ]);
+            testCode('{a:{b:2}} | (.a,.a.b) = .', [
+              { a: { a: { b: 2 }, b: { a: { b: 2 } } } },
+            ]);
             testCode('{a: {b:1},b:2} | .a = .b', [{ a: 2, b: 2 }]);
+          });
+          describe('empty', () => {
+            it('LHS', () => {
+              expectCode('{a: {b:1},b:2} | empty = 5', [{ a: { b: 1 }, b: 2 }]);
+            });
+            it('RHS', () => {
+              expectCode('{a: {b:1},b:2} | (.a.b,.b) = empty', []);
+            });
+            it('both', () => {
+              expectCode('{a: {b:1},b:2} | empty = empty', []);
+            });
           });
           describe('RHS multi', () => {
             testCode('{a: {b:1},b:2} | .a = (1,2,3)', [
@@ -1175,10 +1188,82 @@ describe('evaluate', () => {
               { a: 3, b: 2 },
             ]);
           });
+          it('multi = multi', () => {
+            expectCode('{} | (.a,.b) = (1,2)', [
+              { a: 1, b: 1 },
+              { a: 2, b: 2 },
+            ]);
+          });
           it('LHS filter', () => {
             expectCode('[1,2,3,4,5,6,7,8,9,10] | (.[] | select(.>5)) = 0', [
               [1, 2, 3, 4, 5, 0, 0, 0, 0, 0],
             ]);
+          });
+          describe('slice', () => {
+            it('replace', () => {
+              expectCode('[0,1,2,3,4,5,6,7,8,9,10] | (.[1:5]) = ["-"]', [
+                [0, '-', 5, 6, 7, 8, 9, 10],
+              ]);
+            });
+            it('delete', () => {
+              expectCode('[0,1,2,3,4,5,6,7,8,9,10] | (.[1:5]) = []', [
+                [0, 5, 6, 7, 8, 9, 10],
+              ]);
+            });
+            it('.', () => {
+              expectCode('[0,1,2,3] | (.[1:3]) = .', [[0, 0, 1, 2, 3, 3]]);
+            });
+            it('empty array', () => {
+              expectCode('[] | .[5:] = [1,2,3]', [[1, 2, 3]]);
+            });
+            it('null', () => {
+              expectCode('null | .[5:] = [1,2,3]', [[1, 2, 3]]);
+            });
+          });
+          it('empty property', () => {
+            expectCode('{} | .a = .', [{ a: {} }]);
+          });
+          describe('empty path', () => {
+            describe('assign constant', () => {
+              it('null', () => {
+                expectCode('null | . = 5', [5]);
+              });
+              it('true', () => {
+                expectCode('true | . = 5', [5]);
+              });
+              it('0', () => {
+                expectCode('0 | . = 5', [5]);
+              });
+              it('""', () => {
+                expectCode('"" | . = 5', [5]);
+              });
+              it('[]', () => {
+                expectCode('[] | . = 5', [5]);
+              });
+              it('{}', () => {
+                expectCode('{} | . = 5', [5]);
+              });
+            });
+            describe('assign .', () => {
+              it('null', () => {
+                expectCode('null | . = .', [null]);
+              });
+              it('true', () => {
+                expectCode('true | . = .', [true]);
+              });
+              it('0', () => {
+                expectCode('0 | . = .', [0]);
+              });
+              it('""', () => {
+                expectCode('"" | . = .', ['']);
+              });
+              it('[]', () => {
+                expectCode('[] | . = .', [[]]);
+              });
+              it('{}', () => {
+                expectCode('{} | . = .', [{}]);
+              });
+            });
           });
           it('create new path', () => {
             expectCode('{a:1} | .b.c.d = 10', [{ a: 1, b: { c: { d: 10 } } }]);
@@ -1213,8 +1298,26 @@ describe('evaluate', () => {
               { a: { b: 2 }, b: 4 },
             ]);
           });
+          describe('empty', () => {
+            it('LHS', () => {
+              expectCode('{a: {b:1},b:2} | empty |= 5', [
+                { a: { b: 1 }, b: 2 },
+              ]);
+            });
+            it('RHS', () => {
+              expectCode('{a: {b:1},b:2} | (.a.b,.b) |= empty', [{ a: {} }]);
+            });
+            it('both', () => {
+              expectCode('{a: {b:1},b:2} | empty |= empty', [
+                { a: { b: 1 }, b: 2 },
+              ]);
+            });
+          });
           describe('RHS multi', () => {
             testCode('{a: {b:1},b:2} | .a |= (1,2,3)', [{ a: 1, b: 2 }]);
+          });
+          it('multi |= multi', () => {
+            expectCode('{} | (.a,.b) |= (1,2)', [{ a: 1, b: 1 }]);
           });
           describe('LHS filter', () => {
             it('input ignored', () => {
@@ -1227,6 +1330,66 @@ describe('evaluate', () => {
                 '[1,2,3,4,5,6,7,8,9,10] | (.[] | select(.>5)) |= .*10',
                 [[1, 2, 3, 4, 5, 60, 70, 80, 90, 100]]
               );
+            });
+          });
+          describe('slice', () => {
+            it('replace', () => {
+              expectCode('[0,1,2,3,4,5,6,7,8,9,10] | (.[1:5]) |= ["-"]', [
+                [0, '-', 5, 6, 7, 8, 9, 10],
+              ]);
+            });
+            it('delete', () => {
+              expectCode('[0,1,2,3,4,5,6,7,8,9,10] | (.[1:5]) |= []', [
+                [0, 5, 6, 7, 8, 9, 10],
+              ]);
+            });
+            it('.', () => {
+              expectCode('[0,1,2,3] | (.[1:3]) |= .', [[0, 1, 2, 3]]);
+            });
+          });
+          it('empty property', () => {
+            expectCode('{} | .a |= .', [{ a: null }]);
+          });
+          describe('empty path', () => {
+            describe('assign constant', () => {
+              it('null', () => {
+                expectCode('null | . |= 5', [5]);
+              });
+              it('true', () => {
+                expectCode('true | . |= 5', [5]);
+              });
+              it('0', () => {
+                expectCode('0 | . |= 5', [5]);
+              });
+              it('""', () => {
+                expectCode('"" | . |= 5', [5]);
+              });
+              it('[]', () => {
+                expectCode('[] | . |= 5', [5]);
+              });
+              it('{}', () => {
+                expectCode('{} | . |= 5', [5]);
+              });
+            });
+            describe('assign .', () => {
+              it('null', () => {
+                expectCode('null | . |= .', [null]);
+              });
+              it('true', () => {
+                expectCode('true | . |= .', [true]);
+              });
+              it('0', () => {
+                expectCode('0 | . |= .', [0]);
+              });
+              it('""', () => {
+                expectCode('"" | . |= .', ['']);
+              });
+              it('[]', () => {
+                expectCode('[] | . |= .', [[]]);
+              });
+              it('{}', () => {
+                expectCode('{} | . |= .', [{}]);
+              });
             });
           });
         });
@@ -1242,6 +1405,70 @@ describe('evaluate', () => {
                 [3, 4, [1, 2], [3, 4]],
               ],
             ]);
+            testCode('[0,1,2,3] | (.[1:3]) += ["-"]', [[0, 1, 2, '-', 3]]);
+            testCode('[0,1,2,3] | (.[1:3]) += .', [[0, 1, 2, 0, 1, 2, 3, 3]]);
+            it('empty property', () => {
+              expectCode('{} | .a += 5', [{ a: 5 }]);
+            });
+            it('multi += multi', () => {
+              expectCode('{} | (.a,.b) += (1,2)', [
+                { a: 1, b: 1 },
+                { a: 2, b: 2 },
+              ]);
+            });
+            describe('empty', () => {
+              it('LHS', () => {
+                expectCode('{a:{b:1}, b:2} | empty += 5', [
+                  { a: { b: 1 }, b: 2 },
+                ]);
+              });
+              it('RHS', () => {
+                expectCode('{a:{b:1}, b:2} | (.a.b,.b) += empty', []);
+              });
+              it('both', () => {
+                expectCode('{a:{b:1}, b:2} | empty += empty', []);
+              });
+            });
+
+            describe('empty path', () => {
+              describe('assign constant', () => {
+                it('null', () => {
+                  expectCode('null | . += 5', [5]);
+                });
+                it('0', () => {
+                  expectCode('0 | . += 5', [5]);
+                });
+                it('"abc"', () => {
+                  expectCode('"abc" | . += "def"', ['abcdef']);
+                });
+                it('[1,2,3]', () => {
+                  expectCode('[1,2,3] | . += [4,5,6]', [[1, 2, 3, 4, 5, 6]]);
+                });
+                it('{a:1}', () => {
+                  expectCode('{a:1} | . += {b:2}', [{ a: 1, b: 2 }]);
+                });
+              });
+              describe('assign .', () => {
+                it('null', () => {
+                  expectCode('null | . += .', [null]);
+                });
+                it('5', () => {
+                  expectCode('5 | . += .', [10]);
+                });
+                it('"abc"', () => {
+                  expectCode('"abc" | . += .', ['abcabc']);
+                });
+                it('[1,2,3]', () => {
+                  expectCode('[1,2,3] | . += .', [[1, 2, 3, 1, 2, 3]]);
+                });
+                it('{a:1}', () => {
+                  expectCode('{a:1} | . += .', [{ a: 1 }]);
+                });
+              });
+            });
+            it('multiple same paths', () => {
+              expectCode('{a:1} | (.a,.a,.a) += 1', [{ a: 4 }]);
+            });
           });
           describe('-=', () => {
             testCode('{a:{b:1}, b:2} | (.a.b, .b) -= (1,2)', [

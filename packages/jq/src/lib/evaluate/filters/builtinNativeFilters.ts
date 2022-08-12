@@ -14,7 +14,7 @@ import {
   transformRegExpMatch,
   Type,
   typeOf,
-} from '../utils';
+} from '../utils/utils';
 import { NativeFilter, wrapBareNativeFilters } from './lib/nativeFilter';
 import { notImplementedError } from '../evaluateErrors';
 import { compare } from '../compare';
