@@ -23,9 +23,15 @@ The interpreter should currently support many of jq's features. However, not eve
 features still lack an implementation:
 
 - Modules
-- Assignment operators `=`, `|=`, `+=`, `-=`, `*=`, `/=`, `%=`, `//=`.
 - Most of the formats (except for `@base64` and `@base64d`)
-- Most of the builtins (except for `length`)
+- Most of the built-in filters (to see, which builtins are implemented, please, refer
+  to [builtins.spec.ts](https://github.com/alexxander/jq-tools/blob/main/packages/jq/src/lib/evaluate/spec/builtins.spec.ts))
+  - Note, however, that at least the following built-in filters are implemented:
+    `add/0`, `all/0`, `all/1`, `all/2`, `any/0`, `any/1`, `any/2`, `del/1`, `delpaths/1`, `empty/0`, `first/0`
+    , `first/1`, `from_entries/0`, `group_by/1`, `has/1`, `index/1`, `indices/1`, `isempty/1`, `join/1`, `keys/0`
+    , `last/0`, `last/1`, `length/0`, `limit/2`, `map/1`, `match/1`, `match/2`, `not/0`, `nth/1`, `nth/2`, `range/1`
+    , `range/2`, `range/3`, `rindex/1`, `round/0`, `select/1`, `sort/0`, `sort_by/1`, `split/1`, `sub/2`, `sub/3`
+    , `test/1`, `test/2`, `to_entries/0`, `tostring/0`, `type/0`, `unique/0`, `unique_by/1`, `with_entries/1`
 
 #### `jq` template tag (`jq<In=any, Out=unknown>`)
 
