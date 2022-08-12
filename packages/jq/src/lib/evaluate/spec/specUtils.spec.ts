@@ -55,13 +55,17 @@ export function testCodeError(code: string) {
   });
 }
 
+export function expectCodePartial(code: string, partialResults: any[]) {
+  const generator = evaluate(parse(code), [null]);
+  for (const result of partialResults) {
+    expect(generator.next().value).toEqual(result);
+  }
+  expect(() => generator.next()).toThrowErrorMatchingSnapshot();
+}
+
 export function testCodePartial(code: string, partialResults: any[]) {
   it(code, () => {
-    const generator = evaluate(parse(code), [null]);
-    for (const result of partialResults) {
-      expect(generator.next().value).toEqual(result);
-    }
-    expect(() => generator.next()).toThrowErrorMatchingSnapshot();
+    expectCodePartial(code, partialResults);
   });
 }
 

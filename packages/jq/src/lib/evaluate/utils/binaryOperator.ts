@@ -1,4 +1,5 @@
 import {
+  AlternativeOperator,
   AssignmentOperator,
   BinaryOperator,
   BooleanBinaryOperator,
@@ -14,6 +15,7 @@ export enum BinaryOperatorType {
   boolean,
   pipe,
   comma,
+  alternative,
   destructuringAlternative,
 }
 
@@ -28,6 +30,8 @@ type OperatorTypeMapping<T extends BinaryOperatorType> =
     ? PipeOperator
     : T extends BinaryOperatorType.comma
     ? CommaOperator
+    : T extends BinaryOperatorType.alternative
+    ? AlternativeOperator
     : T extends BinaryOperatorType.destructuringAlternative
     ? DestructuringAlternativeOperator
     : never;
@@ -35,7 +39,7 @@ type OperatorTypeMapping<T extends BinaryOperatorType> =
 const operatorMapping: Record<BinaryOperator, BinaryOperatorType> = {
   '|': BinaryOperatorType.pipe,
   ',': BinaryOperatorType.comma,
-  '//': BinaryOperatorType.normal,
+  '//': BinaryOperatorType.alternative,
   '=': BinaryOperatorType.assignment,
   '|=': BinaryOperatorType.assignment,
   '+=': BinaryOperatorType.assignment,

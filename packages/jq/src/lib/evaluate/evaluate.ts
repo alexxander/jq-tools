@@ -6,6 +6,7 @@ import {
   ProgAst,
 } from '../parser/AST';
 import {
+  evaluateAlternativeOperator,
   evaluateArithmeticUpdateAssignment,
   evaluateBooleanOperator,
   evaluateNormalBinaryOperator,
@@ -172,13 +173,17 @@ class Environment {
             yield* left;
             yield* right;
           } else if (
+            isBinaryOperatorType(ast.operator, BinaryOperatorType.normal)
+          ) {
+            yield* evaluateNormalBinaryOperator(ast.operator, left, right);
+          } else if (
             isBinaryOperatorType(ast.operator, BinaryOperatorType.boolean)
           ) {
             yield* evaluateBooleanOperator(ast.operator, left, right);
           } else if (
-            isBinaryOperatorType(ast.operator, BinaryOperatorType.normal)
+            isBinaryOperatorType(ast.operator, BinaryOperatorType.alternative)
           ) {
-            yield* evaluateNormalBinaryOperator(ast.operator, left, right);
+            yield* evaluateAlternativeOperator(left, right);
           } else if (
             isBinaryOperatorType(ast.operator, BinaryOperatorType.assignment)
           ) {

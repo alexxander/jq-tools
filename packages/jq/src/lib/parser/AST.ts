@@ -140,7 +140,6 @@ export interface ForeachAst {
 }
 
 export type NormalBinaryOperator =
-  | '//'
   | '=='
   | '!='
   | '<'
@@ -164,6 +163,7 @@ export type AssignmentOperator =
 export type BooleanBinaryOperator = 'or' | 'and';
 export type PipeOperator = '|';
 export type CommaOperator = ',';
+export type AlternativeOperator = '//';
 export type DestructuringAlternativeOperator = '?//';
 export type BinaryOperator =
   | NormalBinaryOperator
@@ -171,6 +171,7 @@ export type BinaryOperator =
   | BooleanBinaryOperator
   | PipeOperator
   | CommaOperator
+  | AlternativeOperator
   | DestructuringAlternativeOperator;
 
 export interface BinaryAst {

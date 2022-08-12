@@ -84,6 +84,12 @@ exports[`evaluate operators binary addition incompatible types "a"+[] 1`] = `"Op
 
 exports[`evaluate operators binary addition incompatible types 1+"a" 1`] = `"Operator + cannot be applied to number and string"`;
 
+exports[`evaluate operators binary alternative multi with error left - after falsy values 1`] = `"Feature 'error/0' is not implemented"`;
+
+exports[`evaluate operators binary alternative multi with error left - after truthy values 1`] = `"Feature 'error/0' is not implemented"`;
+
+exports[`evaluate operators binary alternative multi with error right 1`] = `"Feature 'error/0' is not implemented"`;
+
 exports[`evaluate operators binary assignment = wierd cases 0 | null = 5 1`] = `"Feature 'operator:=' is not implemented"`;
 
 exports[`evaluate operators binary assignment = wierd cases 2 | 1 = 5 1`] = `"Feature 'operator:=' is not implemented"`;

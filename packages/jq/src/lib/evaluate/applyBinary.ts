@@ -47,8 +47,6 @@ export function applyNormalBinaryOperator(
   right: any
 ): any {
   switch (op) {
-    case '//':
-      return isTrue(left) ? left : right;
     case '==':
       return compare(left, right) === 0;
     case '!=':
@@ -212,5 +210,22 @@ export function* evaluateNormalBinaryOperator(
     yield createItem(
       applyNormalBinaryOperator(op, leftItem.value, rightItem.value)
     );
+  }
+}
+
+export function* evaluateAlternativeOperator(
+  left: ItemIterator,
+  right: ItemIterator
+): ItemIterator {
+  let hasResults = false;
+  for (const leftItem of left) {
+    if (isTrue(leftItem.value)) {
+      yield leftItem;
+      hasResults = true;
+    }
+  }
+
+  if (!hasResults) {
+    yield* right;
   }
 }

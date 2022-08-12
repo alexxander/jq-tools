@@ -3,6 +3,7 @@ import {
   comparisonTest,
   expectCode,
   expectCodeError,
+  expectCodePartial,
   helper,
   testCode,
   testCodeError,
@@ -1129,6 +1130,56 @@ describe('evaluate', () => {
         testCode('"" // false', ['']);
         testCode('0 // 5', [0]);
         testCode('-1 // "abc"', [-1]);
+        it('empty', () => {
+          expectCode('empty // 1', [1]);
+        });
+        describe('multi', () => {
+          it('input', () => {
+            expectCode(
+              'null, 1, null, 2, 3, false, false, 4, 5, 6, null | . // -1',
+              [-1, 1, -1, 2, 3, -1, -1, 4, 5, 6, -1]
+            );
+          });
+          describe('left', () => {
+            it('only truthy values', () => {
+              expectCode('(1,2,3) // 1', [1, 2, 3]);
+            });
+            it('only falsy values', () => {
+              expectCode('(null, null, false, false, null) // 1', [1]);
+            });
+            it('mix of falsy and truthy values', () => {
+              expectCode(
+                '(null, 0, 1, null, true, false, {}, 2, 3, 4, false, null) // 1',
+                [0, 1, true, {}, 2, 3, 4]
+              );
+            });
+          });
+          it('right', () => {
+            expectCode('null // (1,2,3)', [1, 2, 3]);
+          });
+          it('both', () => {
+            expectCode('(1,2,3) // (4,5,6)', [1, 2, 3]);
+          });
+          describe('with error', () => {
+            it('left - after truthy values', () => {
+              expectCodePartial(
+                '(1,2, error("ERROR"), 3,null,null) // (4,5,6)',
+                [1, 2]
+              );
+            });
+            it('left - after falsy values', () => {
+              expectCodeError(
+                '(null,false, error("ERROR"), null,null) // (4,5,6)'
+              );
+            });
+            it('right', () => {
+              expectCodePartial(
+                '(null,null) // (4,5,error("ERROR"),6)',
+                [4, 5]
+              );
+            });
+          });
+        });
         describe('chain', () => {
           testCode('false // false // false // true', [true]);
           testCode('false // 0 // false // true', [0]);
