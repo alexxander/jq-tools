@@ -1093,6 +1093,9 @@ describe('builtins', () => {
         //  Consider adjusting this.
         expectCode('first(empty)', []);
       });
+      it('unthrown error', () => {
+        expectCode('first(1,2,3,4, error("ERROR"))', [1]);
+      });
     });
     // describe('flatten/0', () => {
     //   it('flatten/0', () => {

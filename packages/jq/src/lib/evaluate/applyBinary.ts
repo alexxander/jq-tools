@@ -1,4 +1,5 @@
 import {
+  AlternativeOperator,
   AssignmentOperator,
   BinaryOperator,
   BooleanBinaryOperator,
@@ -26,6 +27,10 @@ import { JqEvaluateError } from '../errors';
 import { setPath } from './utils/setPath';
 import { combineIterators, nestedIterators } from './utils/nestedIterators';
 import { getPath } from './utils/getPath';
+import {
+  BinaryOperatorType,
+  isBinaryOperatorType,
+} from './utils/binaryOperator';
 
 function cannotApplyOperatorToError(op: BinaryOperator, left: any, right: any) {
   return new JqEvaluateError(
@@ -155,15 +160,19 @@ export function* evaluateArithmeticUpdateAssignment(
   )) {
     let out = inputItem.value;
     for (const path of pathIterator) {
+      // Remove the '=' sign from the original arithmetic update-assignment operator
+      const subOp: NormalBinaryOperator | AlternativeOperator = op.slice(
+        0,
+        -1
+      ) as any;
+      const originalValue = getPath(out, path);
+
       out = setPath(
         out,
         path,
-        applyNormalBinaryOperator(
-          // Remove the '=' sign from the original arithmetic update-assignment operator
-          op.slice(0, -1) as any,
-          getPath(out, path),
-          value
-        )
+        isBinaryOperatorType(subOp, BinaryOperatorType.alternative)
+          ? applyAlternativeOperator(originalValue, value)
+          : applyNormalBinaryOperator(subOp, originalValue, value)
       );
     }
     yield createItem(out);
@@ -211,6 +220,10 @@ export function* evaluateNormalBinaryOperator(
       applyNormalBinaryOperator(op, leftItem.value, rightItem.value)
     );
   }
+}
+
+function applyAlternativeOperator(left: any, right: any) {
+  return isTrue(left) ? left : right;
 }
 
 export function* evaluateAlternativeOperator(
