@@ -157,11 +157,31 @@ describe('builtins', () => {
         expectCode('1,2,3,4,5 | empty', []);
       });
     });
-    // describe('endswith/1', () => {
-    //   it('endswith/1', () => {
-    //     throw notImplementedError('endswith/1');
-    //   });
-    // });
+    describe('endswith/1', () => {
+      it('simple', () => {
+        expectCode('"defgabc", "abxxx", "" | endswith("abc")', [
+          true,
+          false,
+          false,
+        ]);
+      });
+      describe('error', () => {
+        it('input', () => {
+          expectCodeError('null | endswith("abc")');
+          expectCodeError('false | endswith("abc")');
+          expectCodeError('0 | endswith("abc")');
+          expectCodeError('[] | endswith("abc")');
+          expectCodeError('{} | endswith("abc")');
+        });
+        it('arg', () => {
+          expectCodeError('"abc" | endswith(null)');
+          expectCodeError('"abc" | endswith(false)');
+          expectCodeError('"abc" | endswith(0)');
+          expectCodeError('"abc" | endswith([])');
+          expectCodeError('"abc" | endswith({})');
+        });
+      });
+    });
     // describe('env/0', () => {
     //   it('env/0', () => {
     //     throw notImplementedError('env/0');
@@ -734,11 +754,31 @@ describe('builtins', () => {
     //     throw notImplementedError('sqrt/0');
     //   });
     // });
-    // describe('startswith/1', () => {
-    //   it('startswith/1', () => {
-    //     throw notImplementedError('startswith/1');
-    //   });
-    // });
+    describe('startswith/1', () => {
+      it('simple', () => {
+        expectCode('"abcdefg", "abxxx", "" | startswith("abc")', [
+          true,
+          false,
+          false,
+        ]);
+      });
+      describe('error', () => {
+        it('input', () => {
+          expectCodeError('null | startswith("abc")');
+          expectCodeError('false | startswith("abc")');
+          expectCodeError('0 | startswith("abc")');
+          expectCodeError('[] | startswith("abc")');
+          expectCodeError('{} | startswith("abc")');
+        });
+        it('arg', () => {
+          expectCodeError('"abc" | startswith(null)');
+          expectCodeError('"abc" | startswith(false)');
+          expectCodeError('"abc" | startswith(0)');
+          expectCodeError('"abc" | startswith([])');
+          expectCodeError('"abc" | startswith({})');
+        });
+      });
+    });
     // describe('stderr/0', () => {
     //   it('stderr/0', () => {
     //     throw notImplementedError('stderr/0');

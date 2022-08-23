@@ -70,6 +70,26 @@ exports[`builtins native delpaths/1 invalid arg 3`] = `"Expected an array of pat
 
 exports[`builtins native delpaths/1 invalid arg 4`] = `"Expected an array of paths"`;
 
+exports[`builtins native endswith/1 error arg 1`] = `"Got null, string expected"`;
+
+exports[`builtins native endswith/1 error arg 2`] = `"Got boolean, string expected"`;
+
+exports[`builtins native endswith/1 error arg 3`] = `"Got number, string expected"`;
+
+exports[`builtins native endswith/1 error arg 4`] = `"Got array, string expected"`;
+
+exports[`builtins native endswith/1 error arg 5`] = `"Got object, string expected"`;
+
+exports[`builtins native endswith/1 error input 1`] = `"Got null, string expected"`;
+
+exports[`builtins native endswith/1 error input 2`] = `"Got boolean, string expected"`;
+
+exports[`builtins native endswith/1 error input 3`] = `"Got number, string expected"`;
+
+exports[`builtins native endswith/1 error input 4`] = `"Got array, string expected"`;
+
+exports[`builtins native endswith/1 error input 5`] = `"Got object, string expected"`;
+
 exports[`builtins native has/1 error "" | has(0) 1`] = `"Cannot check whether string has a number key"`;
 
 exports[`builtins native has/1 error [] | has("") 1`] = `"Cannot check whether array has a string key"`;
@@ -103,3 +123,23 @@ exports[`builtins native length/0 number 1`] = `"number has no length"`;
 exports[`builtins native range/2 error range("";6) 1`] = `"Got string, number expected"`;
 
 exports[`builtins native range/2 error range(0;"") 1`] = `"Got string, number expected"`;
+
+exports[`builtins native startswith/1 error arg 1`] = `"Got null, string expected"`;
+
+exports[`builtins native startswith/1 error arg 2`] = `"Got boolean, string expected"`;
+
+exports[`builtins native startswith/1 error arg 3`] = `"Got number, string expected"`;
+
+exports[`builtins native startswith/1 error arg 4`] = `"Got array, string expected"`;
+
+exports[`builtins native startswith/1 error arg 5`] = `"Got object, string expected"`;
+
+exports[`builtins native startswith/1 error input 1`] = `"Got null, string expected"`;
+
+exports[`builtins native startswith/1 error input 2`] = `"Got boolean, string expected"`;
+
+exports[`builtins native startswith/1 error input 3`] = `"Got number, string expected"`;
+
+exports[`builtins native startswith/1 error input 4`] = `"Got array, string expected"`;
+
+exports[`builtins native startswith/1 error input 5`] = `"Got object, string expected"`;

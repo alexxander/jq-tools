@@ -140,8 +140,11 @@ export const builtinNativeFilters: Record<string, NativeFilter> = {
       throw notImplementedError('drem/2');
     },
     *'empty/0'() {},
-    *'endswith/1'() {
-      throw notImplementedError('endswith/1');
+    *'endswith/1'(input: string, str: string) {
+      assertString(input);
+      assertString(str);
+
+      yield input.endsWith(str);
     },
     *'env/0'() {
       throw notImplementedError('env/0');
@@ -402,8 +405,11 @@ export const builtinNativeFilters: Record<string, NativeFilter> = {
     *'sqrt/0'() {
       throw notImplementedError('sqrt/0');
     },
-    *'startswith/1'() {
-      throw notImplementedError('startswith/1');
+    *'startswith/1'(input: string, str: string) {
+      assertString(input);
+      assertString(str);
+
+      yield input.startsWith(str);
     },
     *'stderr/0'() {
       throw notImplementedError('stderr/0');
