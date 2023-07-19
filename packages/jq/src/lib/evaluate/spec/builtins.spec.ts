@@ -125,6 +125,11 @@ describe('builtins', () => {
           [{ a: { b: { c: [5, { e: 2 }] } }, f: 3, g: 4 }]
         );
       });
+      it('nested', () => {
+        expectCode('{x:{y:"keep",z:"remove"}} | .x | delpaths([["z"]])', [
+          { y: 'keep' },
+        ]);
+      });
       it('nonexistent path', () => {
         expectCode('{a:1, b:2, c:3} | delpaths([["x", "y", "z"], ["xx"]])', [
           { a: 1, b: 2, c: 3 },
@@ -607,11 +612,96 @@ describe('builtins', () => {
     //     throw notImplementedError('now/0');
     //   });
     // });
-    // describe('path/1', () => {
-    //   it('path/1', () => {
-    //     throw notImplementedError('path/1');
-    //   });
-    // });
+    describe('path/1', () => {
+      it('simple', () => {
+        expectCode('{} | path(.x.y.z)', [['x', 'y', 'z']]);
+      });
+      it('pipe', () => {
+        expectCode('{} | path(.x | .y | .z)', [['x', 'y', 'z']]);
+      });
+      it('array', () => {
+        expectCode('[] | path(.[1].x)', [[1, 'x']]);
+      });
+      describe('nested', () => {
+        it('index', () => {
+          expectCode('{} | .x | path(.y)', [['y']]);
+        });
+        it('slice', () => {
+          expectCode('[] | .[1:] | path(.[1])', [[1]]);
+        });
+        it('iterator', () => {
+          expectCode('[{},{}] | .[] | path(.y)', [['y'], ['y']]);
+        });
+      });
+      it('.a', () => {
+        expectCode('null | path(.a)', [['a']]);
+      });
+      it('.a[0,1]', () => {
+        expectCode('null | path(.a[0,1])', [
+          ['a', 0],
+          ['a', 1],
+        ]);
+      });
+      it('.a.b, .b', () => {
+        expectCode('null | path(.a.b, .b)', [['a', 'b'], ['b']]);
+      });
+      it('.[]', () => {
+        expectCode('[1,2,3,4,5] | path(.[])', [[0], [1], [2], [3], [4]]);
+      });
+      it('.[] | select(.>3)', () => {
+        expectCode('[1,2,3,4,5] | path(.[] | select(.>3))', [[3], [4]]);
+      });
+      it('.[1:3] | select(.>3) | .[2]', () => {
+        expectCode('[1,2,3,4,5] | path(.[1:3] | select(.>3) | .[2])', [
+          [{ start: 1, end: 3 }, 2],
+        ]);
+      });
+      it('.[2:3][-2].a', () => {
+        expectCode('[1,2,3,4,5] | path(.[2:3][-2].a)', [
+          [{ start: 2, end: 3 }, -2, 'a'],
+        ]);
+      });
+      it('1 | path(.)', () => {
+        expectCode('1 | path(.)', [[]]);
+      });
+      it('with filter', () => {
+        expectCode('def f($a): .a.b[$a].c; null | path(f(5))', [
+          ['a', 'b', 5, 'c'],
+        ]);
+      });
+      describe('wierd cases', () => {
+        // If the input and the path expression are equal to the same number or boolean,
+        //   or if they are both equal to null, the path is equal to []
+        testCode('1 | path(1)', [[]]);
+        testCode('2 | path(2)', [[]]);
+        testCodeError('2 | path(1)');
+
+        testCode('true | path(true)', [[]]);
+        testCodeError('true | path(false)');
+
+        testCode('null | path(null)', [[]]);
+        testCodeError('null | path(true)');
+        testCodeError('null | path(0)');
+        testCodeError('0 | path(null)');
+        testCodeError('false | path(null)');
+      });
+      describe('error', () => {
+        testCodeError('[1] | path(0)');
+        testCodeError('[1] | path("")');
+
+        testCodeError('[1] | path(.a.b)');
+        testCodeError('[1] | path(.[0].b)');
+        testCodeError('[1] as $var | path($var)');
+        testCodeError('[1] as $var | path($var[0])');
+
+        testCodeError('{a:1} | path(0)');
+        testCodeError('{a:1} | path("")');
+
+        testCodeError('{a:1} | path(.a.b)');
+        testCodeError('{a:1} as $var | path($var)');
+        testCodeError('{a:1} as $var | path($var.a)');
+      });
+    });
     // describe('pow/2', () => {
     //   it('pow/2', () => {
     //     throw notImplementedError('pow/2');
@@ -1099,6 +1189,9 @@ describe('builtins', () => {
       });
       it('array', () => {
         expectCode('[0,1,2,3,4,5,6,7] | del(.[2,5,3,7])', [[0, 1, 4, 6]]);
+      });
+      it('nested', () => {
+        expectCode('{x:{y:"keep",z:"remove"}} | .x | del(.z)', [{ y: 'keep' }]);
       });
     });
     // describe('error/1', () => {

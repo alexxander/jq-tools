@@ -263,7 +263,11 @@ class Environment {
             const argSets: any[][] = [];
             for (let i = 0; i < arity; i++) {
               const argExprAst = ast.args[i];
-              argSets.push(Array.from(this.evaluate(argExprAst, single(item))));
+              argSets.push(
+                Array.from(
+                  this.evaluate(argExprAst, single(createItem(item.value)))
+                )
+              );
             }
             for (const combination of generateCombinations(argSets)) {
               yield* def.value(item, ...combination);
