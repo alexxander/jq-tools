@@ -1,7 +1,7 @@
 {
   "name": "@jq-tools/jq",
   "description": "jq for js",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "type": "commonjs",
   "repository": {
     "type": "git",
