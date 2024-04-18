@@ -909,11 +909,29 @@ describe('builtins', () => {
     //     throw notImplementedError('tojson/0');
     //   });
     // });
-    // describe('tonumber/0', () => {
-    //   it('tonumber/0', () => {
-    //     throw notImplementedError('tonumber/0');
-    //   });
-    // });
+    describe('tonumber/0', () => {
+      it('null', () => {
+        expectCodeError('null | tonumber');
+      });
+      it('boolean', () => {
+        expectCodeError('false | tonumber');
+        expectCodeError('true | tonumber');
+      });
+      it('numeric string', () => {
+        expectCode('"123", "0.123", "0" | tonumber', [123, 0.123, 0]);
+        expectCode('"Infinity", "-Infinity" | tonumber', [1.7976931348623157e+308, -1.7976931348623157e+308]);
+      });
+      it('non-numeric string', () => {
+        expectCodeError('"10a" | tonumber');
+        expectCodeError('"test" | tonumber');
+      });
+      it('array', () => {
+        expectCodeError('[1, 2, 3], [] | tonumber');
+      });
+      it('object', () => {
+        expectCodeError('{a:"a","1":1}, {} | tonumber');
+      });
+    });
     describe('tostring/0', () => {
       it('null', () => {
         expectCode('null | tostring', ['null']);
