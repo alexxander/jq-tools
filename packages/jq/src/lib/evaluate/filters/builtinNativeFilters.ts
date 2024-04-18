@@ -435,8 +435,31 @@ export const builtinNativeFilters: Record<string, NativeFilter> = {
     *'tojson/0'() {
       throw notImplementedError('tojson/0');
     },
-    *'tonumber/0'() {
-      throw notImplementedError('tonumber/0');
+    *'tonumber/0'(input: unknown) {
+      const type = typeOf(input);
+      switch (typeOf(input)) {
+        case Type.string: {
+          const parsedNumber = Number(input);
+          if(isNaN(parsedNumber)) {
+            throw Error(`${type} (${toString(input)}) cannot be parsed as number`);
+          }
+          if(!isFinite(parsedNumber)) {
+            yield parsedNumber > 0 ? Number.MAX_VALUE : -1 * Number.MAX_VALUE;
+            break;
+          }
+          yield parsedNumber;
+        break;
+        }
+        case Type.number:
+          yield input;
+          break;
+        case Type.object:
+        case Type.array:
+        case Type.null:
+        case Type.boolean:
+        default:
+          throw Error(`${type} (${toString(input)}) cannot be parsed as number`);
+      }
     },
     *'tostring/0'(input: unknown) {
       yield toString(input);
