@@ -437,7 +437,7 @@ export const builtinNativeFilters: Record<string, NativeFilter> = {
     },
     *'tonumber/0'(input: unknown) {
       const type = typeOf(input);
-      switch (typeOf(input)) {
+      switch (type) {
         case Type.string: {
           const parsedNumber = Number(input);
           if(isNaN(parsedNumber)) {
