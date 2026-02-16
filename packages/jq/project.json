@@ -15,7 +15,7 @@
     "publish": {
       "executor": "@nrwl/workspace:run-commands",
       "options": {
-        "command": "node tools/scripts/publish.mjs jq {args.ver} {args.tag}"
+        "command": "node tools/scripts/publish.mjs jq \"{args.otp}\" \"{args.ver}\" \"{args.tag}\""
       },
       "dependsOn": [
         {
